@@ -1,0 +1,36 @@
+
+GET http://127.0.0.1:8000/api/v1/residential/list HTTP/1.1
+content-type: application/json
+
+###
+
+POST http://127.0.0.1:8000/api/v1/residential/create HTTP/1.1
+content-type: application/json
+
+{
+  "name": "回想小区",
+  "address": "拱墅区",
+  "city": "杭州",
+  "state": "浙江",
+  "postal_code": "330100",
+  "year_built": 2008,
+  "community_type": "住宅",
+  "description": "董家弄 懂生活"     
+}
+
+
+###
+POST http://127.0.0.1:8000/api/v1/residential/update HTTP/1.1
+content-type: application/json
+
+{
+  "community_id": "2c3767ad-71ac-495b-ad06-7a4ed626eb02",
+  "name": "董家弄",
+  "address": "拱墅区1",
+  "city": "杭州1",
+  "state": "浙江",
+  "postal_code": "330100",
+  "year_built": 2008,
+  "community_type": "住宅",
+  "description": "董家弄 懂生活"     
+}
