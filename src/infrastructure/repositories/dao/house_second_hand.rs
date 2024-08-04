@@ -2,35 +2,35 @@ use crate::{
     infrastructure::{
         db::connection::DBPool,
         repositories::entities::house_second_hand::{
-            HouseSecondHandListedPO, HouseSecondHandSoldPO, HouseSecondHandUnlistedPO,
+            HouseSecondHandListed, HouseSecondHandSold, HouseSecondHandSoldPO,
         },
     },
-    schema::{house_second_hand_listed, house_second_hand_sale, house_second_hand_unlisted},
+    schema::{house_second_hand, house_second_hand_sold},
 };
 use bigdecimal::BigDecimal;
-use diesel::prelude::Insertable;
-use diesel::RunQueryDsl;
+use chrono::NaiveDateTime;
+use diesel::{prelude::AsChangeset, ExpressionMethods, QueryDsl, RunQueryDsl};
+use diesel::{prelude::Insertable, query_dsl::methods::SelectDsl, SelectableHelper};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
-#[diesel(table_name = house_second_hand_listed)]
+#[diesel(table_name = house_second_hand)]
 pub struct NewHouseSecondHandListedDto {
-    house_id: String,
-    pice: BigDecimal,
-    low_pice: Option<BigDecimal>,
+    pub house_id: String,
+    pub community_name: String,
+    pub pice: BigDecimal,
+    pub low_pice: Option<BigDecimal>,
+    pub listed: i8,
+    pub listed_time: Option<NaiveDateTime>,
+    pub unlisted_time: Option<NaiveDateTime>,
 }
 
 impl NewHouseSecondHandListedDto {
-    pub fn new(house_id: String, pice: BigDecimal, low_pice: Option<BigDecimal>) -> Self {
-        Self {
-            house_id,
-            pice,
-            low_pice,
-        }
-    }
-    pub async fn create(&self, pool: DBPool) -> Result<(), diesel::result::Error> {
-        let mut conn = pool.get().unwrap();
-        diesel::insert_into(house_second_hand_listed::table)
+    pub async fn insert_into(&self, pool: DBPool) -> Result<(), diesel::result::Error> {
+        let mut conn: r2d2::PooledConnection<
+            diesel::r2d2::ConnectionManager<diesel::MysqlConnection>,
+        > = pool.get().unwrap();
+        diesel::insert_into(house_second_hand::table)
             .values(self)
             .execute(&mut conn)
             .expect("Error saving new house");
@@ -39,73 +39,46 @@ impl NewHouseSecondHandListedDto {
     }
 }
 
-pub struct QueryHouseSecondHandListedDto {}
-
-impl QueryHouseSecondHandListedDto {
-    pub fn list(&self, pool: DBPool) -> Vec<HouseSecondHandListedPO> {
-        use crate::schema::house_second_hand_listed::dsl::house_second_hand_listed;
-
-        let mut conn = pool.get().unwrap();
-        house_second_hand_listed
-            .load::<HouseSecondHandListedPO>(&mut conn)
-            .expect("Error loading houses")
-    }
+#[derive(Debug, Clone, Serialize, Deserialize, AsChangeset)]
+#[diesel(table_name = house_second_hand)]
+pub struct UpdateHouseSecondHandListedDto {
+    pub house_id: String,
+    pub community_name: String,
+    pub pice: Option<BigDecimal>,
+    pub low_pice: Option<BigDecimal>,
+    pub listed: Option<i8>,
+    pub listed_time: Option<NaiveDateTime>,
+    pub unlisted_time: Option<NaiveDateTime>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
-#[diesel(table_name = house_second_hand_unlisted)]
-
-pub struct NewHouseSecondHandUnlistedDto {
-    house_id: String,
-}
-
-impl NewHouseSecondHandUnlistedDto {
-    pub fn new(house_id: String) -> Self {
-        Self { house_id }
-    }
-    pub async fn create(&self, pool: DBPool) -> Result<(), diesel::result::Error> {
+impl UpdateHouseSecondHandListedDto {
+    pub async fn update(&self, pool: DBPool) -> Result<(), diesel::result::Error> {
+        use crate::schema::house_second_hand::dsl::*;
         let mut conn = pool.get().unwrap();
-        diesel::insert_into(house_second_hand_unlisted::table)
-            .values(self)
+        diesel::update(house_second_hand)
+            .filter(house_id.eq(&self.house_id))
+            .set(self)
             .execute(&mut conn)
             .expect("Error saving new house");
-
         Ok(())
     }
 }
 
-pub struct QueryHouseSecondHandUnlistedDto {}
-
-impl QueryHouseSecondHandUnlistedDto {
-    pub fn list(&self, pool: DBPool) -> Vec<HouseSecondHandUnlistedPO> {
-        use crate::schema::house_second_hand_unlisted::dsl::house_second_hand_unlisted;
-        let mut conn = pool.get().unwrap();
-
-        house_second_hand_unlisted
-            .load::<HouseSecondHandUnlistedPO>(&mut conn)
-            .expect("Error loading houses")
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
-#[diesel(table_name = house_second_hand_sale)]
-
+#[diesel(table_name = house_second_hand_sold)]
 pub struct NewHouseSecondHandSoldDto {
-    sale_price: BigDecimal,
-    house_id: String,
+    pub house_id: String,
+    pub community_name: String,
+    pub days_to_sell: i32,
+    pub sold_price: BigDecimal,
+    pub sold_time: Option<NaiveDateTime>,
 }
 
 impl NewHouseSecondHandSoldDto {
-    pub fn new(house_id: String, sale_price: BigDecimal) -> Self {
-        Self {
-            sale_price,
-            house_id,
-        }
-    }
-
     pub async fn create(&self, pool: DBPool) -> Result<(), diesel::result::Error> {
         let mut conn = pool.get().unwrap();
-        diesel::insert_into(house_second_hand_sale::table)
+
+        diesel::insert_into(house_second_hand_sold::table)
             .values(self)
             .execute(&mut conn)
             .expect("Error saving new house");
@@ -114,15 +87,50 @@ impl NewHouseSecondHandSoldDto {
     }
 }
 
+// 登记的二手房
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueryHouseSecondHandDto {}
+
+impl QueryHouseSecondHandDto {
+    pub fn list(&self, pool: DBPool) -> Vec<HouseSecondHandListed> {
+        use crate::schema::house;
+        use crate::schema::house_second_hand::dsl::*;
+        use crate::schema::residential;
+        use diesel::JoinOnDsl;
+
+        let mut conn = pool.get().unwrap();
+
+        SelectDsl::select(
+            house_second_hand
+                .inner_join(house::table.on(house::house_id.eq(house_id)))
+                .inner_join(residential::table.on(residential::community_name.eq(community_name))),
+            HouseSecondHandListed::as_select(),
+        )
+        .load::<HouseSecondHandListed>(&mut conn)
+        .expect("Error loading houses")
+    }
+}
+
+// 出售的二手房
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryHouseSecondHandSoldDto {}
 
 impl QueryHouseSecondHandSoldDto {
-    pub fn list(&self, pool: DBPool) -> Vec<HouseSecondHandSoldPO> {
-        use crate::schema::house_second_hand_sale::dsl::house_second_hand_sale;
+    pub fn list(&self, pool: DBPool) -> Vec<HouseSecondHandSold> {
+        use crate::schema::house;
+        use crate::schema::house_second_hand_sold::dsl::*;
+        use crate::schema::residential;
+        use diesel::JoinOnDsl;
+
         let mut conn = pool.get().unwrap();
 
-        house_second_hand_sale
-            .load::<HouseSecondHandSoldPO>(&mut conn)
-            .expect("Error loading houses")
+        SelectDsl::select(
+            house_second_hand_sold
+                .inner_join(house::table.on(house::house_id.eq(house_id)))
+                .inner_join(residential::table.on(residential::community_name.eq(community_name))),
+            HouseSecondHandSold::as_select(),
+        )
+        .load::<HouseSecondHandSold>(&mut conn)
+        .expect("Error loading houses")
     }
 }

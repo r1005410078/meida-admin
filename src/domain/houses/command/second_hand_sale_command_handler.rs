@@ -1,25 +1,25 @@
 use crate::{
     common::event_channel::EventSender,
     domain::houses::{
-        events::second_hand::SecondHandSaleEvent, repositories::house::HouseRepository,
+        events::second_hand::SecondHandSoldEvent, repositories::house::HouseRepository,
     },
 };
 
-use super::second_hand_command::SecondHandSaleCommand;
+use super::second_hand_command::SecondHandSoldCommand;
 
 pub struct SecondHandSaleCommandHandler<R: HouseRepository> {
     repo: R,
-    sender: EventSender<SecondHandSaleEvent>,
+    sender: EventSender<SecondHandSoldEvent>,
 }
 
 impl<R: HouseRepository> SecondHandSaleCommandHandler<R> {
-    pub fn new(repo: R, sender: EventSender<SecondHandSaleEvent>) -> Self {
+    pub fn new(repo: R, sender: EventSender<SecondHandSoldEvent>) -> Self {
         Self { repo, sender }
     }
 
     pub async fn handle(
         &self,
-        command: SecondHandSaleCommand,
+        command: SecondHandSoldCommand,
     ) -> Result<(), diesel::result::Error> {
         if let Some(mut aggregate) = self.repo.get_by_id(command.house_id.clone()).await {
             aggregate

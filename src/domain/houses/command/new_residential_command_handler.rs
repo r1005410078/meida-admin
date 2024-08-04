@@ -20,11 +20,10 @@ impl<R: ResidentialRepository> NewResidentialCommandHandler<R> {
 }
 
 impl<R: ResidentialRepository> NewResidentialCommandHandler<R> {
-    pub async fn handle(
-        &self,
-        command: NewResidentialCommand,
-    ) -> Result<(), diesel::result::Error> {
-        let aggregates = ResidentialAggregate::add_residential(command, self.sender.clone()).await;
+    pub async fn handle(&self, command: NewResidentialCommand) -> anyhow::Result<()> {
+        let aggregates =
+            ResidentialAggregate::add_residential(command, self.sender.clone()).await?;
+
         self.repository.save(&aggregates).await?;
 
         Ok(())

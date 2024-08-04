@@ -8,7 +8,7 @@ POST http://127.0.0.1:8000/api/v1/house/create HTTP/1.1
 content-type: application/json
 
 {
-    "community_id": "b0298aac-94f1-4691-8e85-a2fa042b7118",
+    "community_name": "b0298aac-94f1-4691-8e85-a2fa042b7118",
     "house_address": "string222",
     "house_type": "string",
     "area": 321,
@@ -34,7 +34,7 @@ content-type: application/json
 
 {
     "house_id": "129cd56c-4f96-4aad-8273-c2bef2450ecd",
-    "community_id": "b0298aac-94f1-4691-8e85-a2fa042b7118",
+    "community_name": "b0298aac-94f1-4691-8e85-a2fa042b7118",
     "house_address": "荣陶胜",
     "house_type": "string",
     "area": 321,

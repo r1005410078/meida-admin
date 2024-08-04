@@ -5,9 +5,7 @@ use crate::{
         entities::house::HousePO,
         events::house::{NewHouseEvent, UpdateHouseEvent},
     },
-    infrastructure::repositories::{
-        dao::house::NewHouseDto, mysql_house_repository::MysqlHouseRepository,
-    },
+    infrastructure::repositories::mysql_house_repository::MysqlHouseRepository,
 };
 
 pub struct HouseService {
@@ -19,21 +17,27 @@ impl HouseService {
         Self { repo }
     }
 
-    pub async fn create(&self, event: NewHouseEvent) -> Result<(), diesel::result::Error> {
-        self.repo.generate_house_event_record(event.into()).await
+    pub async fn create(&self, event: NewHouseEvent) -> anyhow::Result<()> {
+        self.repo.insert_into(event.into()).await
     }
 
-    pub async fn update(&self, event: UpdateHouseEvent) -> Result<(), diesel::result::Error> {
-        if let Some(house) = self.repo.get_by_house_id(event.house_id.clone()).await {
-            self.repo
-                .generate_house_event_record(NewHouseDto::new_by_event(event, house))
-                .await
-        } else {
-            Ok(())
-        }
+    pub async fn update(&self, event: UpdateHouseEvent) -> anyhow::Result<()> {
+        self.repo.update(event).await
+    }
+
+    pub async fn delete(&self, house_id: String) -> anyhow::Result<()> {
+        self.repo.delete(house_id).await
     }
 
     pub async fn list(&self) -> Vec<HousePO> {
         self.repo.list().await
+    }
+
+    pub async fn get_by_house_id(&self, input_house_id: String) -> Option<HousePO> {
+        self.repo.get_by_house_id(input_house_id).await
+    }
+
+    pub async fn list_by_owner_name(&self, input_owner_name: String) -> Vec<HousePO> {
+        self.repo.list_by_owner_name(input_owner_name).await
     }
 }

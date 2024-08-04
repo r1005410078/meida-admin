@@ -6,7 +6,7 @@ use crate::domain::houses::events::house::UpdateHouseEvent;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateHouseCommand {
     pub house_id: String,
-    pub community_id: String,
+    pub community_name: String,
     pub house_address: Option<String>,
     pub house_type: Option<String>,
     pub area: Option<BigDecimal>,
@@ -20,14 +20,13 @@ pub struct UpdateHouseCommand {
     pub house_image: Option<String>,
     pub owner_name: Option<String>,
     pub owner_phone: Option<String>,
-    pub updated_by: Option<String>,
 }
 
 impl From<UpdateHouseCommand> for UpdateHouseEvent {
     fn from(value: UpdateHouseCommand) -> Self {
         Self {
             house_id: value.house_id,
-            community_id: value.community_id,
+            community_name: value.community_name,
             house_address: value.house_address,
             house_type: value.house_type,
             area: value.area,
@@ -41,7 +40,7 @@ impl From<UpdateHouseCommand> for UpdateHouseEvent {
             house_image: value.house_image,
             owner_name: value.owner_name,
             owner_phone: value.owner_phone,
-            updated_by: value.updated_by,
+            updated_by: None,
         }
     }
 }

@@ -1,13 +1,15 @@
 use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
-use diesel::prelude::Queryable;
+use diesel::{prelude::Queryable, Selectable};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+use crate::schema::house;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable, Selectable)]
+#[diesel(table_name = house)]
 pub struct HousePO {
-    pub id: i32,
     pub house_id: String,
-    pub community_id: String,
+    pub community_name: String,
     pub house_address: String,
     pub house_type: String,
     pub area: BigDecimal,
@@ -23,5 +25,6 @@ pub struct HousePO {
     pub owner_phone: String,
     pub created_by: Option<String>,
     pub updated_by: Option<String>,
-    pub event_time: Option<NaiveDateTime>,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }

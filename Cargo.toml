@@ -21,3 +21,7 @@ actix-web = "4.8.0"
 log = "0.4.22"
 env_logger = "0.11.3"
 uuid = { version = "1.10.0", features = ["v4"] }
+qiniu-sdk = { version = "0.2.4", features = ["upload-token", "credential", "download"]}
+qiniu-credential = "0.2.4"
+qiniu-upload-token = "0.2.4"
+url-escape = "0.1.1"

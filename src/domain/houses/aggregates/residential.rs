@@ -1,6 +1,5 @@
 use diesel::prelude::{AsChangeset, Insertable, Queryable};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use crate::{
     common::event_channel::EventSender,
@@ -17,44 +16,48 @@ use crate::{
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable, Queryable, AsChangeset)]
 #[diesel(table_name = residential_aggregate)]
 pub struct ResidentialAggregate {
-    pub community_id: String,
-    pub name: String,    // 小区名称
-    pub address: String, // 小区地址
-    pub city: String,    // 城市
-    pub state: String,   // 省份
+    pub community_name: String,
+    pub region: String, // 小区地址
+    pub city: String,   // 城市
+    pub state: String,  // 省份
 }
 
 impl ResidentialAggregate {
     pub async fn add_residential(
         command: NewResidentialCommand,
         sender: EventSender<NewResidentialEvent>,
-    ) -> Self {
-        let community_id = Uuid::new_v4().to_string();
-
+    ) -> anyhow::Result<Self> {
         sender
-            .send(command.convert_event(community_id.clone()))
-            .await
-            .unwrap();
+            .send(command.convert_event(command.community_name.clone()))
+            .await?;
 
-        Self {
-            community_id,
-            name: command.name,
-            address: command.address,
+        Ok(Self {
+            community_name: command.community_name,
+            region: command.region,
             city: command.city,
             state: command.state.clone(),
-        }
+        })
     }
 
     pub async fn update_residential(
         &mut self,
         command: UpdateResidentialCommand,
         sender: EventSender<UpdateResidentialEvent>,
-    ) {
-        self.name = command.name.clone().unwrap();
-        self.address = command.address.clone().unwrap();
-        self.city = command.city.clone().unwrap();
-        self.state = command.state.clone().unwrap();
+    ) -> anyhow::Result<()> {
+        if let Some(ref region) = command.region {
+            self.region = region.clone();
+        }
 
-        sender.send(command.into()).await.unwrap();
+        if let Some(ref city) = command.city {
+            self.city = city.clone();
+        }
+
+        if let Some(ref state) = command.state {
+            self.state = state.clone();
+        }
+
+        sender.send(command.into()).await?;
+
+        Ok(())
     }
 }

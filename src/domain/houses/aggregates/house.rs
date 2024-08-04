@@ -1,5 +1,8 @@
 use chrono::{NaiveDateTime, Utc};
-use diesel::prelude::{AsChangeset, Insertable, Queryable};
+use diesel::{
+    prelude::{AsChangeset, Insertable, Queryable},
+    Selectable,
+};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -10,24 +13,31 @@ use crate::{
             delete_house_command::DeleteHouseCommand,
             new_house_command::NewHouseCommand,
             second_hand_command::{
-                SecondHandListedCommand, SecondHandSaleCommand, SecondHandUnlistedCommand,
+                SecondHandListedCommand, SecondHandSoldCommand, SecondHandUnlistedCommand,
             },
+            second_hand_new_command::NewSecondHandCommand,
+            second_hand_update_command::UpdateSecondHandCommand,
             update_house_command::UpdateHouseCommand,
         },
         events::{
             house::{DeleteHouseEvent, NewHouseEvent, UpdateHouseEvent},
-            second_hand::{SecondHandListedEvent, SecondHandSaleEvent, SecondHandUnlistedEvent},
+            second_hand::{
+                NewSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
+                SecondHandUnlistedEvent, UpdateSecondHandEvent,
+            },
         },
         object_value::second_hand::SecondHandStatus,
     },
     schema::house_aggregate,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize, Insertable, AsChangeset, Queryable, Default)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, Insertable, AsChangeset, Queryable, Default, Selectable,
+)]
 #[diesel(table_name = house_aggregate)]
 pub struct HouseAggregate {
     pub house_id: String,
-    pub community_id: String,
+    pub community_name: String,
     pub house_address: String,
     pub registration_time: Option<NaiveDateTime>,
     // 房屋被删除时间
@@ -49,43 +59,38 @@ pub struct HouseAggregate {
 }
 
 impl HouseAggregate {
-    pub async fn add_house(command: NewHouseCommand, sender: EventSender<NewHouseEvent>) -> Self {
-        let house_id = Uuid::new_v4().to_string();
-
+    // 新增二手房
+    pub async fn second_hand_new(
+        &mut self,
+        command: NewSecondHandCommand,
+        sender: EventSender<NewSecondHandEvent>,
+    ) {
         sender
-            .send(command.convert_event(house_id.clone()))
+            .send(NewSecondHandEvent {
+                house_id: command.house_id.clone(),
+                community_name: self.community_name.clone(),
+                pice: command.pice,
+                low_pice: command.low_pice,
+            })
             .await
             .unwrap();
-
-        Self {
-            house_id,
-            community_id: command.community_id.clone(),
-            house_address: command.house_address.clone(),
-            ..Default::default()
-        }
     }
 
-    pub async fn update_house(
+    // 更新二手房
+    pub async fn second_hand_update(
         &mut self,
-        command: UpdateHouseCommand,
-        sender: EventSender<UpdateHouseEvent>,
+        command: UpdateSecondHandCommand,
+        sender: EventSender<UpdateSecondHandEvent>,
     ) {
-        self.community_id = command.community_id.clone();
-        if let Some(address) = command.house_address.clone() {
-            self.house_address = address;
-        }
-
-        sender.send(command.clone().into()).await.unwrap();
-    }
-
-    // 删除房屋
-    pub async fn delete_house(
-        &mut self,
-        command: DeleteHouseCommand,
-        sender: EventSender<DeleteHouseEvent>,
-    ) {
-        self.delete_time = Some(Utc::now().naive_utc());
-        sender.send(command.convert_event()).await.unwrap();
+        sender
+            .send(UpdateSecondHandEvent {
+                house_id: command.house_id.clone(),
+                community_name: self.community_name.clone(),
+                pice: command.pice,
+                low_pice: command.low_pice,
+            })
+            .await
+            .unwrap();
     }
 
     // 二手房上架
@@ -102,7 +107,15 @@ impl HouseAggregate {
             self.second_hand_listed_time = Some(Utc::now().naive_utc());
 
             // 发送事件
-            sender.send(command.convert_event()).await.unwrap();
+            sender
+                .send(SecondHandListedEvent {
+                    house_id: command.house_id.clone(),
+                    community_name: self.community_name.clone(),
+                    listed: 1,
+                    listed_time: self.second_hand_listed_time,
+                })
+                .await
+                .unwrap();
         }
     }
 
@@ -116,35 +129,49 @@ impl HouseAggregate {
         if self.second_hand_status() == SecondHandStatus::Listed {
             // 更新下架时间
             self.second_hand_unlisted_time = Some(Utc::now().naive_utc());
-            // 清除上架时间
-            self.second_hand_listed_time.take();
             // 发送事件
-            sender.send(command.convert_event()).await.unwrap();
+            sender
+                .send(SecondHandUnlistedEvent {
+                    house_id: command.house_id.clone(),
+                    community_name: self.community_name.clone(),
+                    listed: 0,
+                    unlisted_time: Utc::now().naive_utc(),
+                })
+                .await
+                .unwrap();
         }
     }
 
     // 二手卖出
     pub async fn second_hand_sale(
         &mut self,
-        command: SecondHandSaleCommand,
-        sender: EventSender<SecondHandSaleEvent>,
+        command: SecondHandSoldCommand,
+        sender: EventSender<SecondHandSoldEvent>,
     ) {
         // 如果上架了才能卖出
-        if self.second_hand_status() == SecondHandStatus::Listed {
-            // 清除上架时间
-            self.second_hand_listed_time.take();
-            // 更新卖出时间
-            self.second_hand_sale_time = Some(Utc::now().naive_utc());
-            // 发送事件
-            sender.send(command.convert_event()).await.unwrap();
-        }
+        if self.second_hand_status() == SecondHandStatus::Listed {}
+        // 清除上架时间
+        self.second_hand_listed_time.take();
+        self.second_hand_unlisted_time.take();
+        // 更新卖出时间
+        self.second_hand_sale_time = Some(Utc::now().naive_utc());
+        // 发送事件
+        sender
+            .send(SecondHandSoldEvent {
+                house_id: command.house_id.clone(),
+                community_name: self.community_name.clone(),
+                days_to_sell: 0,
+                sold_price: command.sale_price.clone(),
+                sold_time: self.second_hand_sale_time.unwrap(),
+            })
+            .await
+            .unwrap();
     }
 
     // 二手房状态
     pub fn second_hand_status(&self) -> SecondHandStatus {
         if self.delete_time.is_some() // 删除时间
-            || self.second_hand_unlisted_time.is_some() // 下架时间
-            || self.second_hand_sale_time.is_some()
+            || self.second_hand_unlisted_time > self.second_hand_listed_time
         // 卖出时间
         {
             // 下架状态
@@ -158,5 +185,46 @@ impl HouseAggregate {
         } else {
             SecondHandStatus::Unknown
         }
+    }
+
+    // 新建房屋
+    pub async fn add_house(command: NewHouseCommand, sender: EventSender<NewHouseEvent>) -> Self {
+        let house_id: String = Uuid::new_v4().to_string();
+
+        sender
+            .send(command.convert_event(house_id.clone()))
+            .await
+            .unwrap();
+
+        Self {
+            house_id,
+            community_name: command.community_name.clone(),
+            house_address: command.house_address.clone(),
+            ..Default::default()
+        }
+    }
+
+    // 更新房屋
+    pub async fn update_house(
+        &mut self,
+        command: UpdateHouseCommand,
+        sender: EventSender<UpdateHouseEvent>,
+    ) {
+        self.community_name = command.community_name.clone();
+        if let Some(address) = command.house_address.clone() {
+            self.house_address = address;
+        }
+
+        sender.send(command.clone().into()).await.unwrap();
+    }
+
+    // 删除房屋
+    pub async fn delete_house(
+        &mut self,
+        command: DeleteHouseCommand,
+        sender: EventSender<DeleteHouseEvent>,
+    ) {
+        self.delete_time = Some(Utc::now().naive_utc());
+        sender.send(command.convert_event()).await.unwrap();
     }
 }

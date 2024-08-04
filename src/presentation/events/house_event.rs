@@ -4,7 +4,7 @@ use async_trait::async_trait;
 
 use crate::{
     common::event_channel::EventHandler,
-    domain::houses::events::house::{NewHouseEvent, UpdateHouseEvent},
+    domain::houses::events::house::{DeleteHouseEvent, NewHouseEvent, UpdateHouseEvent},
     infrastructure::repositories::mysql_house_repository::MysqlHouseRepository,
     presentation::service::house::HouseService,
 };
@@ -25,8 +25,6 @@ impl HouseEventHandler {
 impl EventHandler<NewHouseEvent> for HouseEventHandler {
     async fn handle(&self, event: NewHouseEvent) -> anyhow::Result<()> {
         self.service.create(event).await?;
-        println!("生成成功 HouseEventHandler:");
-
         Ok(())
     }
 }
@@ -35,8 +33,14 @@ impl EventHandler<NewHouseEvent> for HouseEventHandler {
 impl EventHandler<UpdateHouseEvent> for HouseEventHandler {
     async fn handle(&self, event: UpdateHouseEvent) -> anyhow::Result<()> {
         self.service.update(event).await?;
-        println!("生成成功 HouseEventHandler:");
+        Ok(())
+    }
+}
 
+#[async_trait]
+impl EventHandler<DeleteHouseEvent> for HouseEventHandler {
+    async fn handle(&self, event: DeleteHouseEvent) -> anyhow::Result<()> {
+        self.service.delete(event.house_id).await?;
         Ok(())
     }
 }

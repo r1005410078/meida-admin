@@ -1,10 +1,14 @@
 use bigdecimal::BigDecimal;
+use diesel::prelude::{AsChangeset, Insertable};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+use crate::schema::house;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
+#[diesel(table_name = house)]
 pub struct NewHouseEvent {
     pub house_id: String,
-    pub community_id: String,
+    pub community_name: String,
     pub house_address: String,
     pub house_type: String,
     pub area: BigDecimal,
@@ -22,10 +26,11 @@ pub struct NewHouseEvent {
     pub updated_by: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Insertable, AsChangeset)]
+#[diesel(table_name = house)]
 pub struct UpdateHouseEvent {
     pub house_id: String,
-    pub community_id: String,
+    pub community_name: String,
     pub house_address: Option<String>,
     pub house_type: Option<String>,
     pub area: Option<BigDecimal>,

@@ -24,7 +24,7 @@ POST http://127.0.0.1:8000/api/v1/residential/update HTTP/1.1
 content-type: application/json
 
 {
-  "community_id": "2c3767ad-71ac-495b-ad06-7a4ed626eb02",
+  "community_name": "2c3767ad-71ac-495b-ad06-7a4ed626eb02",
   "name": "董家弄",
   "address": "拱墅区1",
   "city": "杭州1",

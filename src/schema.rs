@@ -1,23 +1,11 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    delete_house (id) {
-        id -> Integer,
-        #[max_length = 255]
-        house_id -> Nullable<Varchar>,
-        #[max_length = 255]
-        deleted_by -> Varchar,
-        event_time -> Nullable<Timestamp>,
-    }
-}
-
-diesel::table! {
-    house (id) {
-        id -> Integer,
+    house (house_id) {
         #[max_length = 255]
         house_id -> Varchar,
         #[max_length = 255]
-        community_id -> Varchar,
+        community_name -> Varchar,
         #[max_length = 255]
         house_address -> Varchar,
         #[max_length = 50]
@@ -28,7 +16,7 @@ diesel::table! {
         bathrooms -> Integer,
         #[max_length = 20]
         orientation -> Nullable<Varchar>,
-        #[max_length = 50]
+        #[max_length = 255]
         decoration_status -> Nullable<Varchar>,
         #[max_length = 50]
         status -> Nullable<Varchar>,
@@ -43,7 +31,8 @@ diesel::table! {
         created_by -> Nullable<Varchar>,
         #[max_length = 255]
         updated_by -> Nullable<Varchar>,
-        event_time -> Nullable<Timestamp>,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
     }
 }
 
@@ -54,7 +43,7 @@ diesel::table! {
         #[max_length = 255]
         house_address -> Varchar,
         #[max_length = 50]
-        community_id -> Varchar,
+        community_name -> Varchar,
         registration_time -> Nullable<Datetime>,
         delete_time -> Nullable<Datetime>,
         second_hand_sale_time -> Nullable<Datetime>,
@@ -64,47 +53,48 @@ diesel::table! {
         rental_unlisted_time -> Nullable<Datetime>,
         rental_sale_time -> Nullable<Datetime>,
         rental_end_time -> Nullable<Datetime>,
+        created_at -> Datetime,
+        updated_at -> Datetime,
     }
 }
 
 diesel::table! {
-    house_second_hand_listed (id) {
-        id -> Integer,
+    house_second_hand (house_id) {
         #[max_length = 255]
         house_id -> Varchar,
+        #[max_length = 50]
+        community_name -> Varchar,
         pice -> Decimal,
         low_pice -> Nullable<Decimal>,
-        event_time -> Nullable<Timestamp>,
+        listed -> Tinyint,
+        listed_time -> Nullable<Datetime>,
+        unlisted_time -> Nullable<Datetime>,
+        created_at -> Datetime,
+        updated_at -> Datetime,
     }
 }
 
 diesel::table! {
-    house_second_hand_sale (id) {
-        id -> Integer,
-        sale_price -> Decimal,
+    house_second_hand_sold (sold_id) {
+        sold_id -> Integer,
         #[max_length = 255]
         house_id -> Varchar,
-        event_time -> Nullable<Timestamp>,
+        #[max_length = 50]
+        community_name -> Varchar,
+        days_to_sell -> Integer,
+        sold_price -> Decimal,
+        sold_time -> Datetime,
+        created_at -> Datetime,
+        updated_at -> Datetime,
     }
 }
 
 diesel::table! {
-    house_second_hand_unlisted (id) {
-        id -> Integer,
+    residential (community_name) {
         #[max_length = 255]
-        house_id -> Varchar,
-        event_time -> Nullable<Timestamp>,
-    }
-}
-
-diesel::table! {
-    residential (community_id) {
+        community_name -> Varchar,
         #[max_length = 255]
-        community_id -> Varchar,
-        #[max_length = 255]
-        name -> Varchar,
-        #[max_length = 255]
-        address -> Varchar,
+        region -> Varchar,
         #[max_length = 100]
         city -> Varchar,
         #[max_length = 100]
@@ -114,18 +104,20 @@ diesel::table! {
         year_built -> Smallint,
         #[max_length = 100]
         community_type -> Varchar,
+        #[max_length = 100]
+        property_management_company -> Varchar,
         description -> Nullable<Text>,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
     }
 }
 
 diesel::table! {
-    residential_aggregate (community_id) {
+    residential_aggregate (community_name) {
         #[max_length = 255]
-        community_id -> Varchar,
+        community_name -> Varchar,
         #[max_length = 255]
-        name -> Varchar,
-        #[max_length = 255]
-        address -> Varchar,
+        region -> Varchar,
         #[max_length = 255]
         city -> Varchar,
         #[max_length = 255]
@@ -134,12 +126,10 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    delete_house,
     house,
     house_aggregate,
-    house_second_hand_listed,
-    house_second_hand_sale,
-    house_second_hand_unlisted,
+    house_second_hand,
+    house_second_hand_sold,
     residential,
     residential_aggregate,
 );

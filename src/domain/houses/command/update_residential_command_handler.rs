@@ -24,14 +24,11 @@ impl<R: ResidentialRepository> UpdateResidentialCommandHandler<R> {
 }
 
 impl<R: ResidentialRepository> UpdateResidentialCommandHandler<R> {
-    pub async fn handle(
-        &self,
-        command: UpdateResidentialCommand,
-    ) -> Result<(), diesel::result::Error> {
-        if let Some(mut aggregates) = self.repository.get_by_id(&command.community_id).await {
+    pub async fn handle(&self, command: UpdateResidentialCommand) -> anyhow::Result<()> {
+        if let Some(mut aggregates) = self.repository.get_by_id(&command.community_name).await {
             aggregates
                 .update_residential(command, self.sender.clone())
-                .await;
+                .await?;
 
             self.repository.save(&aggregates).await?;
         };

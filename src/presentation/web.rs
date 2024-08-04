@@ -4,9 +4,12 @@ use log::info;
 use crate::{
     common::event_channel::EventChannel,
     domain::houses::events::{
-        house::{NewHouseEvent, UpdateHouseEvent},
-        residential::{NewResidentialEvent, UpdateResidentialEvent},
-        second_hand::{SecondHandListedEvent, SecondHandSaleEvent, SecondHandUnlistedEvent},
+        house::{DeleteHouseEvent, NewHouseEvent, UpdateHouseEvent},
+        residential::{DeleteResidentialEvent, NewResidentialEvent, UpdateResidentialEvent},
+        second_hand::{
+            NewSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
+            SecondHandUnlistedEvent, UpdateSecondHandEvent,
+        },
     },
     infrastructure::repositories::{
         mysql_house_repository::MysqlHouseRepository,
@@ -39,9 +42,16 @@ pub async fn run() -> std::io::Result<()> {
         .sender,
     );
 
+    let delete_residential_sender = web::Data::new(
+        EventChannel::<DeleteResidentialEvent>::new(ResidentialEventHandler::new(
+            residential.clone().into_inner(),
+        ))
+        .sender,
+    );
+
     // 房屋事件
     let house = web::Data::new(MysqlHouseRepository::new());
-    let new_house_sender = web::Data::new(
+    let new_house_sender: web::Data<tokio::sync::mpsc::Sender<NewHouseEvent>> = web::Data::new(
         EventChannel::<NewHouseEvent>::new(HouseEventHandler::new(house.clone().into_inner()))
             .sender,
     );
@@ -51,7 +61,26 @@ pub async fn run() -> std::io::Result<()> {
             .sender,
     );
 
+    let delete_house_sender = web::Data::new(
+        EventChannel::<DeleteHouseEvent>::new(HouseEventHandler::new(house.clone().into_inner()))
+            .sender,
+    );
+
     // 二手房事件
+    let create_second_hand_sender = web::Data::new(
+        EventChannel::<NewSecondHandEvent>::new(SecondHandEventHandler::new(
+            house.clone().into_inner(),
+        ))
+        .sender,
+    );
+
+    let update_second_hand_sender = web::Data::new(
+        EventChannel::<UpdateSecondHandEvent>::new(SecondHandEventHandler::new(
+            house.clone().into_inner(),
+        ))
+        .sender,
+    );
+
     let second_hand_listed_sender = web::Data::new(
         EventChannel::<SecondHandListedEvent>::new(SecondHandEventHandler::new(
             house.clone().into_inner(),
@@ -67,7 +96,7 @@ pub async fn run() -> std::io::Result<()> {
     );
 
     let second_hand_scale_sender = web::Data::new(
-        EventChannel::<SecondHandSaleEvent>::new(SecondHandEventHandler::new(
+        EventChannel::<SecondHandSoldEvent>::new(SecondHandEventHandler::new(
             house.clone().into_inner(),
         ))
         .sender,
@@ -80,15 +109,21 @@ pub async fn run() -> std::io::Result<()> {
             .app_data(residential.clone())
             .app_data(new_residential_sender.clone())
             .app_data(update_residential_sender.clone())
+            .app_data(delete_residential_sender.clone())
             .app_data(house.clone())
             .app_data(new_house_sender.clone())
             .app_data(update_house_sender.clone())
+            .app_data(delete_house_sender.clone())
             .app_data(second_hand_listed_sender.clone())
             .app_data(second_hand_unlisted_sender.clone())
             .app_data(second_hand_scale_sender.clone())
+            .app_data(create_second_hand_sender.clone())
+            .app_data(update_second_hand_sender.clone())
             .wrap(Logger::default())
             .configure(routes::residential_routes::routes)
             .configure(routes::house::routes)
+            .configure(routes::qiliu::routes)
+            .configure(routes::second_hand::routes)
     })
     .bind("127.0.0.1:8000")?
     .run()
