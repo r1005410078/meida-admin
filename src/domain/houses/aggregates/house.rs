@@ -12,6 +12,7 @@ use crate::{
         command::{
             delete_house_command::DeleteHouseCommand,
             new_house_command::NewHouseCommand,
+            rental_house_command_save::SaveRentalHouseCommand,
             second_hand_command::{
                 SecondHandListedCommand, SecondHandSoldCommand, SecondHandUnlistedCommand,
             },
@@ -21,6 +22,7 @@ use crate::{
         },
         events::{
             house::{DeleteHouseEvent, NewHouseEvent, UpdateHouseEvent},
+            rental_house::SaveRentalHouseEvent,
             second_hand::{
                 NewSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
                 SecondHandUnlistedEvent, UpdateSecondHandEvent,
@@ -53,7 +55,7 @@ pub struct HouseAggregate {
     // 租房下架时间
     pub rental_unlisted_time: Option<NaiveDateTime>,
     // 租房租出时间
-    pub rental_sale_time: Option<NaiveDateTime>,
+    pub rental_start_time: Option<NaiveDateTime>,
     // 租房结束时间
     pub rental_end_time: Option<NaiveDateTime>,
 }
@@ -185,6 +187,23 @@ impl HouseAggregate {
         } else {
             SecondHandStatus::Unknown
         }
+    }
+
+    // 保存出租房
+    pub async fn save_rental_house(
+        &self,
+        command: SaveRentalHouseCommand,
+        sender: EventSender<SaveRentalHouseEvent>,
+    ) {
+        sender
+            .send(SaveRentalHouseEvent {
+                house_id: command.house_id,
+                community_name: self.community_name.clone(),
+                rent_pice: command.rent_pice,
+                rent_low_pice: command.rent_low_pice,
+            })
+            .await
+            .unwrap();
     }
 
     // 新建房屋

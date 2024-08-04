@@ -6,6 +6,8 @@ pub mod new_house_command;
 pub mod new_house_command_handler;
 pub mod new_residential_command;
 pub mod new_residential_command_handler;
+pub mod rental_house_command_save;
+pub mod rental_house_command_save_handler;
 pub mod second_hand_command;
 pub mod second_hand_listed_command_handler;
 pub mod second_hand_new_command;

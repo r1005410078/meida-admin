@@ -1,0 +1,10 @@
+
+POST http://127.0.0.1:8000/api/v1/rental_house/save HTTP/1.1
+content-type: application/json
+
+{
+  "house_id": "bb1521a1-1cb6-4687-b58c-adace1c9be5e",
+  "rent_pice": 32.3,
+  "rent_low_pice": 145
+}
+

@@ -5,6 +5,7 @@ use crate::{
     common::event_channel::EventChannel,
     domain::houses::events::{
         house::{DeleteHouseEvent, NewHouseEvent, UpdateHouseEvent},
+        rental_house::SaveRentalHouseEvent,
         residential::{DeleteResidentialEvent, NewResidentialEvent, UpdateResidentialEvent},
         second_hand::{
             NewSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
@@ -17,8 +18,8 @@ use crate::{
     },
     presentation::{
         events::{
-            house_event::HouseEventHandler, residential_event::ResidentialEventHandler,
-            second_hand::SecondHandEventHandler,
+            house_event::HouseEventHandler, rental_house::RentalHouseHandler,
+            residential_event::ResidentialEventHandler, second_hand::SecondHandEventHandler,
         },
         routes,
     },
@@ -102,6 +103,14 @@ pub async fn run() -> std::io::Result<()> {
         .sender,
     );
 
+    // 租房
+    let save_rental_house_sender = web::Data::new(
+        EventChannel::<SaveRentalHouseEvent>::new(RentalHouseHandler::new(
+            house.clone().into_inner(),
+        ))
+        .sender,
+    );
+
     info!("Web server Starting...");
 
     HttpServer::new(move || {
@@ -118,12 +127,14 @@ pub async fn run() -> std::io::Result<()> {
             .app_data(second_hand_unlisted_sender.clone())
             .app_data(second_hand_scale_sender.clone())
             .app_data(create_second_hand_sender.clone())
-            .app_data(update_second_hand_sender.clone())
+            .app_data(save_rental_house_sender.clone())
+            .app_data(save_rental_house_sender.clone())
             .wrap(Logger::default())
             .configure(routes::residential_routes::routes)
             .configure(routes::house::routes)
             .configure(routes::qiliu::routes)
             .configure(routes::second_hand::routes)
+            .configure(routes::rental_house::routes)
     })
     .bind("127.0.0.1:8000")?
     .run()

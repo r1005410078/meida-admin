@@ -1,7 +1,7 @@
 -- Your SQL goes here
 CREATE TABLE house (
     house_id VARCHAR(255) PRIMARY KEY NOT NULL COMMENT '房屋编号',
-    community_name VARCHAR(255) NOT NULL COMMENT '小区编号',
+    community_name VARCHAR(255) NOT NULL COMMENT '小区名称',
     house_address VARCHAR(255) NOT NULL COMMENT '房屋地址',
     house_type VARCHAR(50) NOT NULL COMMENT '房屋类型',
     area DECIMAL(10, 2) NOT NULL COMMENT '房屋面积',

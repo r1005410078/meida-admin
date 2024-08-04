@@ -51,8 +51,36 @@ diesel::table! {
         second_hand_unlisted_time -> Nullable<Datetime>,
         rental_listed_time -> Nullable<Datetime>,
         rental_unlisted_time -> Nullable<Datetime>,
-        rental_sale_time -> Nullable<Datetime>,
+        rental_start_time -> Nullable<Datetime>,
         rental_end_time -> Nullable<Datetime>,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+
+diesel::table! {
+    house_rental (house_id) {
+        #[max_length = 255]
+        house_id -> Varchar,
+        #[max_length = 50]
+        community_name -> Varchar,
+        rent_pice -> Decimal,
+        rent_low_pice -> Nullable<Decimal>,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+
+diesel::table! {
+    house_rental_sold (sold_id) {
+        sold_id -> Integer,
+        #[max_length = 255]
+        house_id -> Varchar,
+        #[max_length = 50]
+        community_name -> Varchar,
+        rent_pice -> Decimal,
+        rent_start_time -> Datetime,
+        rent_end_time -> Datetime,
         created_at -> Datetime,
         updated_at -> Datetime,
     }
@@ -128,6 +156,8 @@ diesel::table! {
 diesel::allow_tables_to_appear_in_same_query!(
     house,
     house_aggregate,
+    house_rental,
+    house_rental_sold,
     house_second_hand,
     house_second_hand_sold,
     residential,
