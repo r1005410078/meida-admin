@@ -1,4 +1,4 @@
-use actix_web::{post, web, HttpResponse};
+use actix_web::{get, post, web, HttpResponse};
 use tokio::sync::mpsc::Sender;
 
 use crate::{
@@ -9,7 +9,11 @@ use crate::{
         },
         events::rental_house::SaveRentalHouseEvent,
     },
-    infrastructure::repositories::mysql_house_repository::MysqlHouseRepository,
+    infrastructure::repositories::{
+        dao::rental_house::{QueryRentalHouseListedDto, QueryRentalHouseSoldDto},
+        mysql_house_repository::MysqlHouseRepository,
+    },
+    presentation::service::rental_house::RentalHouseService,
 };
 
 #[post("/save")]
@@ -23,4 +27,28 @@ async fn save(
         Ok(_) => HttpResponse::Ok().finish(),
         Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
     }
+}
+
+#[get("/list_listed")]
+async fn list_listed(
+    repo: web::Data<MysqlHouseRepository>,
+    query: web::Query<QueryRentalHouseListedDto>,
+) -> HttpResponse {
+    let list = RentalHouseService::new(repo.into_inner())
+        .list_listed(query.into_inner())
+        .await;
+
+    HttpResponse::Ok().json(list)
+}
+
+#[get("/list_sold")]
+async fn list_sold(
+    repo: web::Data<MysqlHouseRepository>,
+    query: web::Query<QueryRentalHouseSoldDto>,
+) -> HttpResponse {
+    let list = RentalHouseService::new(repo.into_inner())
+        .list_sold(query.into_inner())
+        .await;
+
+    HttpResponse::Ok().json(list)
 }

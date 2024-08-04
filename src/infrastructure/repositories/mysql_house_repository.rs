@@ -4,8 +4,11 @@ use super::dao::house_second_hand::{
     NewHouseSecondHandListedDto, NewHouseSecondHandSoldDto, QueryHouseSecondHandDto,
     QueryHouseSecondHandSoldDto, UpdateHouseSecondHandListedDto,
 };
-use super::dao::rental_house::SaveRentalHouseDao;
+use super::dao::rental_house::{
+    QueryRentalHouseListedDto, QueryRentalHouseSoldDto, SaveRentalHouseDao,
+};
 use super::entities::house_second_hand::{HouseSecondHandListed, HouseSecondHandSold};
+use super::entities::rental_house::{RentalHouseListed, RentalHouseSold};
 use crate::domain::houses::entities::house::HousePO;
 use crate::domain::houses::events::house::{NewHouseEvent, UpdateHouseEvent};
 use crate::domain::houses::events::rental_house::SaveRentalHouseEvent;
@@ -180,6 +183,23 @@ impl MysqlHouseRepository {
     ) -> Result<(), diesel::result::Error> {
         let dot: SaveRentalHouseDao = event.into();
         dot.save(self.pool.clone())
+    }
+
+    // 获取上架的出租房
+
+    pub async fn house_rental_house_listed_list(
+        &self,
+        query: QueryRentalHouseListedDto,
+    ) -> Vec<RentalHouseListed> {
+        query.list(self.pool.clone())
+    }
+
+    // 获取已出租的出租房
+    pub async fn house_rental_house_sold_list(
+        &self,
+        query: QueryRentalHouseSoldDto,
+    ) -> Vec<RentalHouseSold> {
+        query.list(self.pool.clone())
     }
 }
 

@@ -66,6 +66,9 @@ diesel::table! {
         community_name -> Varchar,
         rent_pice -> Decimal,
         rent_low_pice -> Nullable<Decimal>,
+        listed -> Tinyint,
+        listed_time -> Nullable<Datetime>,
+        unlisted_time -> Nullable<Datetime>,
         created_at -> Datetime,
         updated_at -> Datetime,
     }

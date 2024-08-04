@@ -6,17 +6,17 @@ use crate::{
     common::event_channel::EventHandler,
     domain::houses::events::rental_house::SaveRentalHouseEvent,
     infrastructure::repositories::mysql_house_repository::MysqlHouseRepository,
-    presentation::service::house::HouseService,
+    presentation::service::rental_house::RentalHouseService,
 };
 
 pub struct RentalHouseHandler {
-    service: HouseService,
+    service: RentalHouseService,
 }
 
 impl RentalHouseHandler {
     pub fn new(reo: Arc<MysqlHouseRepository>) -> Self {
         Self {
-            service: HouseService::new(reo),
+            service: RentalHouseService::new(reo),
         }
     }
 }

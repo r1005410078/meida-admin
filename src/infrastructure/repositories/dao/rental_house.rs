@@ -1,16 +1,20 @@
-use std::sync::Arc;
-
 use bigdecimal::BigDecimal;
+use diesel::SelectableHelper;
 use diesel::{
     dsl::exists,
     prelude::{AsChangeset, Insertable},
+    query_dsl::methods::SelectDsl,
     select, ExpressionMethods, QueryDsl, RunQueryDsl,
 };
 use serde::{Deserialize, Serialize};
 
+use crate::infrastructure::repositories::entities::rental_house::RentalHouseSold;
 use crate::{
     domain::houses::events::rental_house::SaveRentalHouseEvent,
-    infrastructure::db::connection::DBPool, schema::house_rental,
+    infrastructure::{
+        db::connection::DBPool, repositories::entities::rental_house::RentalHouseListed,
+    },
+    schema::house_rental,
 };
 
 #[derive(Debug, Insertable, AsChangeset, Serialize, Deserialize)]
@@ -55,5 +59,53 @@ impl From<SaveRentalHouseEvent> for SaveRentalHouseDao {
             rent_pice: Some(event.rent_pice),
             rent_low_pice: event.rent_low_pice,
         }
+    }
+}
+
+// 出租的房源
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueryRentalHouseListedDto {}
+
+impl QueryRentalHouseListedDto {
+    pub fn list(&self, pool: DBPool) -> Vec<RentalHouseListed> {
+        use crate::schema::house;
+        use crate::schema::house_rental::dsl::*;
+        use crate::schema::residential;
+        use diesel::JoinOnDsl;
+
+        let mut conn = pool.get().unwrap();
+
+        SelectDsl::select(
+            house_rental
+                .inner_join(house::table.on(house::house_id.eq(house_id)))
+                .inner_join(residential::table.on(residential::community_name.eq(community_name))),
+            RentalHouseListed::as_select(),
+        )
+        .load::<RentalHouseListed>(&mut conn)
+        .expect("Error loading houses")
+    }
+}
+
+// 已出租的房源
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueryRentalHouseSoldDto {}
+
+impl QueryRentalHouseSoldDto {
+    pub fn list(&self, pool: DBPool) -> Vec<RentalHouseSold> {
+        use crate::schema::house;
+        use crate::schema::house_rental_sold::dsl::*;
+        use crate::schema::residential;
+        use diesel::JoinOnDsl;
+
+        let mut conn = pool.get().unwrap();
+
+        SelectDsl::select(
+            house_rental_sold
+                .inner_join(house::table.on(house::house_id.eq(house_id)))
+                .inner_join(residential::table.on(residential::community_name.eq(community_name))),
+            RentalHouseSold::as_select(),
+        )
+        .load::<RentalHouseSold>(&mut conn)
+        .expect("Error loading houses")
     }
 }

@@ -57,6 +57,9 @@ CREATE TABLE house_rental (
     `community_name` VARCHAR(50) NOT NULL COMMENT '小区名称',
     `rent_pice`  DECIMAL(10, 2) NOT NULL COMMENT '租金',
     `rent_low_pice`  DECIMAL(10, 2) NULL COMMENT '最底租金',
+    `listed` TINYINT NOT NULL DEFAULT 1 COMMENT '是否上架 0 为下架 1 为上架',
+    `listed_time` DATETIME DEFAULT NULL COMMENT '出租房上架时间',
+    `unlisted_time` DATETIME DEFAULT NULL COMMENT '出租房下架时间',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 );
