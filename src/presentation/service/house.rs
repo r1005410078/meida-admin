@@ -3,10 +3,7 @@ use std::sync::Arc;
 use crate::{
     domain::houses::{
         entities::house::HousePO,
-        events::{
-            house::{NewHouseEvent, UpdateHouseEvent},
-            rental_house::SaveRentalHouseEvent,
-        },
+        events::house::{NewHouseEvent, UpdateHouseEvent},
     },
     infrastructure::repositories::mysql_house_repository::MysqlHouseRepository,
 };
@@ -42,12 +39,5 @@ impl HouseService {
 
     pub async fn list_by_owner_name(&self, input_owner_name: String) -> Vec<HousePO> {
         self.repo.list_by_owner_name(input_owner_name).await
-    }
-
-    pub async fn save_rental_house(
-        &self,
-        event: SaveRentalHouseEvent,
-    ) -> Result<(), diesel::result::Error> {
-        self.repo.save_rental_house(event).await
     }
 }

@@ -1,9 +1,7 @@
 use crate::{
     infrastructure::{
         db::connection::DBPool,
-        repositories::entities::house_second_hand::{
-            HouseSecondHandListed, HouseSecondHandSold, HouseSecondHandSoldPO,
-        },
+        repositories::entities::house_second_hand::{HouseSecondHandListed, HouseSecondHandSold},
     },
     schema::{house_second_hand, house_second_hand_sold},
 };

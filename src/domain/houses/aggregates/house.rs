@@ -13,6 +13,9 @@ use crate::{
             delete_house_command::DeleteHouseCommand,
             new_house_command::NewHouseCommand,
             rental_house_command_save::SaveRentalHouseCommand,
+            rental_house_listed_command::RentalHouseListedCommand,
+            rental_house_sold_command::RentalHouseSoldCommand,
+            rental_house_unlisted_command::RentalHouseUnListedCommand,
             second_hand_command::{
                 SecondHandListedCommand, SecondHandSoldCommand, SecondHandUnlistedCommand,
             },
@@ -22,13 +25,16 @@ use crate::{
         },
         events::{
             house::{DeleteHouseEvent, NewHouseEvent, UpdateHouseEvent},
-            rental_house::SaveRentalHouseEvent,
+            rental_house::{
+                RentalHouseListedEvent, RentalHouseSoldEvent, RentalHouseUnListedEvent,
+                SaveRentalHouseEvent,
+            },
             second_hand::{
                 NewSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
                 SecondHandUnlistedEvent, UpdateSecondHandEvent,
             },
         },
-        object_value::second_hand::SecondHandStatus,
+        object_value::second_hand::{RentalHouseStatus, SecondHandStatus},
     },
     schema::house_aggregate,
 };
@@ -151,23 +157,24 @@ impl HouseAggregate {
         sender: EventSender<SecondHandSoldEvent>,
     ) {
         // 如果上架了才能卖出
-        if self.second_hand_status() == SecondHandStatus::Listed {}
-        // 清除上架时间
-        self.second_hand_listed_time.take();
-        self.second_hand_unlisted_time.take();
-        // 更新卖出时间
-        self.second_hand_sale_time = Some(Utc::now().naive_utc());
-        // 发送事件
-        sender
-            .send(SecondHandSoldEvent {
-                house_id: command.house_id.clone(),
-                community_name: self.community_name.clone(),
-                days_to_sell: 0,
-                sold_price: command.sale_price.clone(),
-                sold_time: self.second_hand_sale_time.unwrap(),
-            })
-            .await
-            .unwrap();
+        if self.second_hand_status() == SecondHandStatus::Listed {
+            // 清除上架时间
+            self.second_hand_listed_time.take();
+            self.second_hand_unlisted_time.take();
+            // 更新卖出时间
+            self.second_hand_sale_time = Some(Utc::now().naive_utc());
+            // 发送事件
+            sender
+                .send(SecondHandSoldEvent {
+                    house_id: command.house_id.clone(),
+                    community_name: self.community_name.clone(),
+                    days_to_sell: 0,
+                    sold_price: command.sale_price.clone(),
+                    sold_time: self.second_hand_sale_time.unwrap(),
+                })
+                .await
+                .unwrap();
+        }
     }
 
     // 二手房状态
@@ -204,6 +211,93 @@ impl HouseAggregate {
             })
             .await
             .unwrap();
+    }
+
+    // 出租房上架
+    pub async fn rental_house_listed(
+        &mut self,
+        command: RentalHouseListedCommand,
+        sender: EventSender<RentalHouseListedEvent>,
+    ) {
+        let status: RentalHouseStatus = self.rental_house_status();
+
+        if status == RentalHouseStatus::Unlisted {
+            // 更新上架时间
+            self.rental_listed_time = Some(Utc::now().naive_utc());
+            sender
+                .send(RentalHouseListedEvent {
+                    house_id: command.house_id,
+                    listed: 1,
+                })
+                .await
+                .unwrap();
+        }
+    }
+
+    // 出租房下架
+    pub async fn rental_house_unlisted(
+        &mut self,
+        command: RentalHouseUnListedCommand,
+        sender: EventSender<RentalHouseUnListedEvent>,
+    ) {
+        let status: RentalHouseStatus = self.rental_house_status();
+        if status == RentalHouseStatus::Listed {
+            // 更新上架时间
+            self.rental_unlisted_time = Some(Utc::now().naive_utc());
+            sender
+                .send(RentalHouseUnListedEvent {
+                    house_id: command.house_id,
+                    listed: 1,
+                })
+                .await
+                .unwrap();
+        }
+    }
+
+    // 出租房租出
+    pub async fn rental_house_sold(
+        &mut self,
+        command: RentalHouseSoldCommand,
+        sender: EventSender<RentalHouseSoldEvent>,
+    ) {
+        let status: RentalHouseStatus = self.rental_house_status();
+        if status == RentalHouseStatus::Listed {
+            // 更新卖出时间
+            self.rental_end_time = Some(Utc::now().naive_utc());
+            sender
+                .send(RentalHouseSoldEvent {
+                    house_id: command.house_id,
+                    community_name: self.community_name.clone(),
+                    rent_pice: command.rent_pice,
+                    rent_start_time: command.rent_start_time,
+                    rent_end_time: command.rent_end_time,
+                })
+                .await
+                .unwrap();
+        }
+    }
+
+    // 二手房状态
+    pub fn rental_house_status(&self) -> RentalHouseStatus {
+        if self.delete_time.is_some() // 删除时间
+                || self.rental_unlisted_time > self.rental_listed_time  // 如果下架时间大于上架时间
+                || self.rental_end_time > Some(Utc::now().naive_utc())
+        // 如果租出时间过期了就是下架了
+        // 卖出时间
+        {
+            // 下架状态
+            return RentalHouseStatus::Unlisted;
+        }
+
+        // 有上架时间
+        if self.rental_unlisted_time.is_some()
+            || self.rental_end_time < Some(Utc::now().naive_utc())
+        {
+            // 上架状态
+            RentalHouseStatus::Listed
+        } else {
+            RentalHouseStatus::Unlisted
+        }
     }
 
     // 新建房屋

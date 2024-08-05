@@ -5,7 +5,10 @@ use crate::{
     common::event_channel::EventChannel,
     domain::houses::events::{
         house::{DeleteHouseEvent, NewHouseEvent, UpdateHouseEvent},
-        rental_house::SaveRentalHouseEvent,
+        rental_house::{
+            RentalHouseListedEvent, RentalHouseSoldEvent, RentalHouseUnListedEvent,
+            SaveRentalHouseEvent,
+        },
         residential::{DeleteResidentialEvent, NewResidentialEvent, UpdateResidentialEvent},
         second_hand::{
             NewSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
@@ -111,6 +114,30 @@ pub async fn run() -> std::io::Result<()> {
         .sender,
     );
 
+    // 上架
+    let rental_house_listed_event = web::Data::new(
+        EventChannel::<RentalHouseListedEvent>::new(RentalHouseHandler::new(
+            house.clone().into_inner(),
+        ))
+        .sender,
+    );
+
+    // 下架
+    let rental_house_unlisted_event = web::Data::new(
+        EventChannel::<RentalHouseUnListedEvent>::new(RentalHouseHandler::new(
+            house.clone().into_inner(),
+        ))
+        .sender,
+    );
+
+    // 出售
+    let rental_house_sold_event = web::Data::new(
+        EventChannel::<RentalHouseSoldEvent>::new(RentalHouseHandler::new(
+            house.clone().into_inner(),
+        ))
+        .sender,
+    );
+
     info!("Web server Starting...");
 
     HttpServer::new(move || {
@@ -127,8 +154,11 @@ pub async fn run() -> std::io::Result<()> {
             .app_data(second_hand_unlisted_sender.clone())
             .app_data(second_hand_scale_sender.clone())
             .app_data(create_second_hand_sender.clone())
+            .app_data(update_second_hand_sender.clone())
             .app_data(save_rental_house_sender.clone())
-            .app_data(save_rental_house_sender.clone())
+            .app_data(rental_house_listed_event.clone())
+            .app_data(rental_house_unlisted_event.clone())
+            .app_data(rental_house_sold_event.clone())
             .wrap(Logger::default())
             .configure(routes::residential_routes::routes)
             .configure(routes::house::routes)

@@ -7,9 +7,7 @@ use crate::{
     },
     infrastructure::repositories::{
         dao::house_second_hand::{QueryHouseSecondHandDto, QueryHouseSecondHandSoldDto},
-        entities::house_second_hand::{
-            HouseSecondHandListed, HouseSecondHandSold, HouseSecondHandSoldPO,
-        },
+        entities::house_second_hand::{HouseSecondHandListed, HouseSecondHandSold},
         mysql_house_repository::MysqlHouseRepository,
     },
 };
