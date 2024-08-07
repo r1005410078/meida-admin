@@ -66,6 +66,57 @@ pub struct HouseAggregate {
     pub rental_end_time: Option<NaiveDateTime>,
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// 房源
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+impl HouseAggregate {
+    // 新建房屋
+    pub async fn add_house(command: NewHouseCommand, sender: EventSender<NewHouseEvent>) -> Self {
+        let house_id: String = Uuid::new_v4().to_string();
+
+        sender
+            .send(command.convert_event(house_id.clone()))
+            .await
+            .unwrap();
+
+        Self {
+            house_id,
+            community_name: command.community_name.clone(),
+            house_address: command.house_address.clone(),
+            ..Default::default()
+        }
+    }
+
+    // 更新房屋
+    pub async fn update_house(
+        &mut self,
+        command: UpdateHouseCommand,
+        sender: EventSender<UpdateHouseEvent>,
+    ) {
+        self.community_name = command.community_name.clone();
+        if let Some(address) = command.house_address.clone() {
+            self.house_address = address;
+        }
+
+        sender.send(command.clone().into()).await.unwrap();
+    }
+
+    // 删除房屋
+    pub async fn delete_house(
+        &mut self,
+        command: DeleteHouseCommand,
+        sender: EventSender<DeleteHouseEvent>,
+    ) {
+        self.delete_time = Some(Utc::now().naive_utc());
+        sender.send(command.convert_event()).await.unwrap();
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// 二手房
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 impl HouseAggregate {
     // 新增二手房
     pub async fn second_hand_new(
@@ -196,6 +247,41 @@ impl HouseAggregate {
         }
     }
 
+    // 二手房状态
+    pub fn rental_house_status(&self) -> RentalHouseStatus {
+        // 租房已经过期
+        let rental_expired = self.rental_end_time > Some(Utc::now().naive_utc());
+        // 下架时间大于上架时间
+        let is_listed = self.rental_unlisted_time > self.rental_listed_time;
+        // 房屋已经被删除
+        let is_deleted_house = self.delete_time.is_some();
+
+        if is_deleted_house || is_listed || rental_expired {
+            // 下架状态
+            return RentalHouseStatus::Unlisted;
+        }
+
+        // 是否是下架时间大于上架时间
+        let is_unlisted = self.rental_listed_time > self.rental_unlisted_time;
+        // 房租没有过期
+        let rental_not_expired =
+            self.rental_end_time.is_some() && self.rental_end_time < Some(Utc::now().naive_utc());
+
+        // 有上架时间
+        if is_unlisted || rental_not_expired {
+            // 上架状态
+            RentalHouseStatus::Listed
+        } else {
+            RentalHouseStatus::Unlisted
+        }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// 房屋出租
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+impl HouseAggregate {
     // 保存出租房
     pub async fn save_rental_house(
         &self,
@@ -220,7 +306,6 @@ impl HouseAggregate {
         sender: EventSender<RentalHouseListedEvent>,
     ) {
         let status: RentalHouseStatus = self.rental_house_status();
-
         if status == RentalHouseStatus::Unlisted {
             // 更新上架时间
             self.rental_listed_time = Some(Utc::now().naive_utc());
@@ -242,12 +327,12 @@ impl HouseAggregate {
     ) {
         let status: RentalHouseStatus = self.rental_house_status();
         if status == RentalHouseStatus::Listed {
-            // 更新上架时间
+            // 更新下架时间
             self.rental_unlisted_time = Some(Utc::now().naive_utc());
             sender
                 .send(RentalHouseUnListedEvent {
                     house_id: command.house_id,
-                    listed: 1,
+                    listed: 0,
                 })
                 .await
                 .unwrap();
@@ -275,69 +360,5 @@ impl HouseAggregate {
                 .await
                 .unwrap();
         }
-    }
-
-    // 二手房状态
-    pub fn rental_house_status(&self) -> RentalHouseStatus {
-        if self.delete_time.is_some() // 删除时间
-                || self.rental_unlisted_time > self.rental_listed_time  // 如果下架时间大于上架时间
-                || self.rental_end_time > Some(Utc::now().naive_utc())
-        // 如果租出时间过期了就是下架了
-        // 卖出时间
-        {
-            // 下架状态
-            return RentalHouseStatus::Unlisted;
-        }
-
-        // 有上架时间
-        if self.rental_unlisted_time.is_some()
-            || self.rental_end_time < Some(Utc::now().naive_utc())
-        {
-            // 上架状态
-            RentalHouseStatus::Listed
-        } else {
-            RentalHouseStatus::Unlisted
-        }
-    }
-
-    // 新建房屋
-    pub async fn add_house(command: NewHouseCommand, sender: EventSender<NewHouseEvent>) -> Self {
-        let house_id: String = Uuid::new_v4().to_string();
-
-        sender
-            .send(command.convert_event(house_id.clone()))
-            .await
-            .unwrap();
-
-        Self {
-            house_id,
-            community_name: command.community_name.clone(),
-            house_address: command.house_address.clone(),
-            ..Default::default()
-        }
-    }
-
-    // 更新房屋
-    pub async fn update_house(
-        &mut self,
-        command: UpdateHouseCommand,
-        sender: EventSender<UpdateHouseEvent>,
-    ) {
-        self.community_name = command.community_name.clone();
-        if let Some(address) = command.house_address.clone() {
-            self.house_address = address;
-        }
-
-        sender.send(command.clone().into()).await.unwrap();
-    }
-
-    // 删除房屋
-    pub async fn delete_house(
-        &mut self,
-        command: DeleteHouseCommand,
-        sender: EventSender<DeleteHouseEvent>,
-    ) {
-        self.delete_time = Some(Utc::now().naive_utc());
-        sender.send(command.convert_event()).await.unwrap();
     }
 }

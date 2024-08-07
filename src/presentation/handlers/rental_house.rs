@@ -38,16 +38,25 @@ async fn save(
     }
 }
 
-#[get("/list_listed")]
-async fn list_listed(
+#[get("/list")]
+async fn list(
     repo: web::Data<MysqlHouseRepository>,
     query: web::Query<QueryRentalHouseListedDto>,
 ) -> HttpResponse {
     let list = RentalHouseService::new(repo.into_inner())
-        .list_listed(query.into_inner())
+        .list(query.into_inner())
         .await;
 
     HttpResponse::Ok().json(list)
+}
+
+#[get["/detail/{id}"]]
+async fn detail(repo: web::Data<MysqlHouseRepository>, query: web::Path<String>) -> HttpResponse {
+    let detail = RentalHouseService::new(repo.into_inner())
+        .detail(query.into_inner())
+        .await;
+
+    HttpResponse::Ok().json(detail)
 }
 
 #[get("/list_sold")]
@@ -55,11 +64,11 @@ async fn list_sold(
     repo: web::Data<MysqlHouseRepository>,
     query: web::Query<QueryRentalHouseSoldDto>,
 ) -> HttpResponse {
-    let list = RentalHouseService::new(repo.into_inner())
+    let list_sold = RentalHouseService::new(repo.into_inner())
         .list_sold(query.into_inner())
         .await;
 
-    HttpResponse::Ok().json(list)
+    HttpResponse::Ok().json(list_sold)
 }
 
 #[post("/listed")]

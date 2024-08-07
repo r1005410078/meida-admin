@@ -223,6 +223,30 @@ impl MysqlHouseRepository {
         query.list(self.pool.clone())
     }
 
+    pub async fn house_rental_house_by_house_id(
+        &self,
+        input_house_id: String,
+    ) -> Option<RentalHouseListed> {
+        use crate::schema::house;
+        use crate::schema::house_rental::dsl::*;
+        use crate::schema::residential;
+        use diesel::query_dsl::methods::SelectDsl;
+        use diesel::JoinOnDsl;
+
+        let mut conn = self.pool.get().unwrap();
+
+        SelectDsl::select(
+            house_rental
+                .inner_join(house::table.on(house::house_id.eq(house_id)))
+                .inner_join(residential::table.on(residential::community_name.eq(community_name)))
+                .filter(house_id.eq(input_house_id)),
+            RentalHouseListed::as_select(),
+        )
+        .first::<RentalHouseListed>(&mut conn)
+        .optional()
+        .expect("Error loading houses")
+    }
+
     // 保存已出租的出租房
     pub async fn save_sold_rental_house(
         &self,

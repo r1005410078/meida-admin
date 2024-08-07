@@ -41,7 +41,7 @@ pub struct RentalHouseListed {
     #[diesel(embed)]
     residential: Residential,
     #[diesel(embed)]
-    house_second_hand: RentalHouseListedPO,
+    rental_house: RentalHouseListedPO,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Selectable)]
@@ -51,5 +51,5 @@ pub struct RentalHouseSold {
     #[diesel(embed)]
     residential: Residential,
     #[diesel(embed)]
-    house_second_hand: RentalHouseSoldPO,
+    rental_house: RentalHouseSoldPO,
 }

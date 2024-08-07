@@ -50,12 +50,17 @@ impl RentalHouseService {
     }
 
     // 获取上架的出租房
-    pub async fn list_listed(&self, query: QueryRentalHouseListedDto) -> Vec<RentalHouseListed> {
+    pub async fn list(&self, query: QueryRentalHouseListedDto) -> Vec<RentalHouseListed> {
         self.repo.house_rental_house_listed_list(query).await
     }
 
     // 获取卖出的出租房
     pub async fn list_sold(&self, query: QueryRentalHouseSoldDto) -> Vec<RentalHouseSold> {
         self.repo.house_rental_house_sold_list(query).await
+    }
+
+    // 获取出租房详情
+    pub async fn detail(&self, house_id: String) -> Option<RentalHouseListed> {
+        self.repo.house_rental_house_by_house_id(house_id).await
     }
 }
