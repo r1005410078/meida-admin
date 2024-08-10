@@ -8,16 +8,14 @@ use crate::{
                 SecondHandListedCommand, SecondHandSoldCommand, SecondHandUnlistedCommand,
             },
             second_hand_listed_command_handler::SecondHandListedCommandHandler,
-            second_hand_new_command::NewSecondHandCommand,
-            second_hand_new_command_handler::NewSecondHandCommandHandler,
             second_hand_sale_command_handler::SecondHandSaleCommandHandler,
+            second_hand_save_command::SaveSecondHandCommand,
+            second_hand_save_command_handler::SaveSecondHandCommandHandler,
             second_hand_unlisted_command_handler::SecondHandUnListedCommandHandler,
-            second_hand_update_command::UpdateSecondHandCommand,
-            second_hand_update_command_handler::UpdateSecondHandCommandHandler,
         },
         events::second_hand::{
-            NewSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
-            SecondHandUnlistedEvent, UpdateSecondHandEvent,
+            SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
+            SecondHandUnlistedEvent,
         },
     },
     infrastructure::repositories::{
@@ -27,31 +25,15 @@ use crate::{
     presentation::service::second_hand::SecondHandService,
 };
 
-// 新增二手房
-#[post("/create")]
-async fn create(
+// 保存二手房
+#[post("/save")]
+async fn save(
     repo: web::Data<MysqlHouseRepository>,
-    sender: web::Data<Sender<NewSecondHandEvent>>,
-    command: web::Json<NewSecondHandCommand>,
+    sender: web::Data<Sender<SaveSecondHandEvent>>,
+    command: web::Json<SaveSecondHandCommand>,
 ) -> HttpResponse {
-    let house: NewSecondHandCommandHandler<std::sync::Arc<MysqlHouseRepository>> =
-        NewSecondHandCommandHandler::new(repo.into_inner(), sender.into_inner());
-
-    match house.handle(command.into_inner()).await {
-        Ok(_) => HttpResponse::Ok().finish(),
-        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
-    }
-}
-
-// 更新二手房
-#[post("/update")]
-async fn update(
-    repo: web::Data<MysqlHouseRepository>,
-    sender: web::Data<Sender<UpdateSecondHandEvent>>,
-    command: web::Json<UpdateSecondHandCommand>,
-) -> HttpResponse {
-    let house: UpdateSecondHandCommandHandler<std::sync::Arc<MysqlHouseRepository>> =
-        UpdateSecondHandCommandHandler::new(repo.into_inner(), sender.into_inner());
+    let house: SaveSecondHandCommandHandler<std::sync::Arc<MysqlHouseRepository>> =
+        SaveSecondHandCommandHandler::new(repo.into_inner(), sender.into_inner());
 
     match house.handle(command.into_inner()).await {
         Ok(_) => HttpResponse::Ok().finish(),

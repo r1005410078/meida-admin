@@ -43,6 +43,8 @@ impl SaveRentalHouseDao {
         .get_result(conn)
         .expect("Error loading houses");
 
+        println!("sean_exists: {:?}", self.rent_low_pice);
+
         if sean_exists {
             diesel::update(house_rental.filter(house_id.eq(self.house_id.clone())))
                 .set(self)
@@ -95,7 +97,9 @@ impl From<RentalHouseUnListedEvent> for SaveRentalHouseDao {
 
 // 出租的房源
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct QueryRentalHouseListedDto {}
+pub struct QueryRentalHouseListedDto {
+    listed: Option<i8>,
+}
 
 impl QueryRentalHouseListedDto {
     pub fn list(&self, pool: DBPool) -> Vec<RentalHouseListed> {
@@ -106,14 +110,21 @@ impl QueryRentalHouseListedDto {
 
         let mut conn = pool.get().unwrap();
 
-        SelectDsl::select(
+        let mut result = SelectDsl::select(
             house_rental
                 .inner_join(house::table.on(house::house_id.eq(house_id)))
                 .inner_join(residential::table.on(residential::community_name.eq(community_name))),
             RentalHouseListed::as_select(),
         )
-        .load::<RentalHouseListed>(&mut conn)
-        .expect("Error loading houses")
+        .into_boxed();
+
+        if let Some(ref _listed) = self.listed {
+            result = result.filter(listed.eq(_listed));
+        }
+
+        result
+            .load::<RentalHouseListed>(&mut conn)
+            .expect("Error loading houses")
     }
 }
 

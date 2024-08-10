@@ -58,6 +58,15 @@ impl MysqlResidentialRepository {
             .expect("Error loading user")
     }
 
+    pub async fn get_community_names(&self) -> Vec<String> {
+        use crate::schema::residential::dsl::*;
+        let conn = &mut self.pool.get().unwrap();
+        residential
+            .select(community_name)
+            .get_results::<String>(conn)
+            .expect("Error loading user")
+    }
+
     pub async fn get_residential_by_community_name(
         &self,
         input_community_name: String,

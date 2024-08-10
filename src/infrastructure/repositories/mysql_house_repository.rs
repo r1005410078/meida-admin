@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use super::dao::house_second_hand::{
-    NewHouseSecondHandListedDto, NewHouseSecondHandSoldDto, QueryHouseSecondHandDto,
-    QueryHouseSecondHandSoldDto, UpdateHouseSecondHandListedDto,
+    NewHouseSecondHandSoldDto, QueryHouseSecondHandDto, QueryHouseSecondHandSoldDto,
+    SaveHouseSecondHandListedDto,
 };
 use super::dao::rental_house::{
     QueryRentalHouseListedDto, QueryRentalHouseSoldDto, RentalHouseSoldDao, SaveRentalHouseDao,
@@ -15,8 +15,7 @@ use crate::domain::houses::events::rental_house::{
     RentalHouseListedEvent, RentalHouseSoldEvent, RentalHouseUnListedEvent, SaveRentalHouseEvent,
 };
 use crate::domain::houses::events::second_hand::{
-    NewSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent, SecondHandUnlistedEvent,
-    UpdateSecondHandEvent,
+    SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent, SecondHandUnlistedEvent,
 };
 use crate::{
     domain::houses::{aggregates::house::HouseAggregate, repositories::house::HouseRepository},
@@ -24,8 +23,8 @@ use crate::{
     schema::house,
 };
 
-use diesel::OptionalExtension;
 use diesel::{ExpressionMethods, SelectableHelper};
+use diesel::{OptionalExtension, TextExpressionMethods};
 use diesel::{QueryDsl, RunQueryDsl};
 
 pub struct MysqlHouseRepository {
@@ -45,30 +44,12 @@ impl MysqlHouseRepository {
 /// 二手房上架下架卖出
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 impl MysqlHouseRepository {
-    // 创建二手房
-    pub async fn create_house_second_hand(
+    // 保存二手房
+    pub async fn save_house_second_hand(
         &self,
-        event: NewSecondHandEvent,
+        event: SaveSecondHandEvent,
     ) -> Result<(), diesel::result::Error> {
-        let dto = NewHouseSecondHandListedDto {
-            house_id: event.house_id,
-            community_name: event.community_name,
-            listed_time: None,
-            unlisted_time: None,
-            listed: 0,
-            pice: event.pice,
-            low_pice: event.low_pice,
-        };
-
-        dto.insert_into(self.pool.clone()).await
-    }
-
-    // 更新二手房
-    pub async fn update_house_second_hand(
-        &self,
-        event: UpdateSecondHandEvent,
-    ) -> Result<(), diesel::result::Error> {
-        let dto = UpdateHouseSecondHandListedDto {
+        let dto = SaveHouseSecondHandListedDto {
             house_id: event.house_id,
             community_name: event.community_name,
             listed_time: None,
@@ -77,25 +58,25 @@ impl MysqlHouseRepository {
             pice: event.pice,
             low_pice: event.low_pice,
         };
-        dto.update(self.pool.clone()).await
+        dto.save(self.pool.clone()).await
     }
 
     // 上架二手房
-    pub async fn save_house_second_hand(
+    pub async fn listed_house_second_hand(
         &self,
         event: SecondHandListedEvent,
     ) -> Result<(), diesel::result::Error> {
-        let dto = UpdateHouseSecondHandListedDto {
+        let dto = SaveHouseSecondHandListedDto {
             house_id: event.house_id,
             community_name: event.community_name,
-            listed_time: event.listed_time,
+            listed_time: None,
             unlisted_time: None,
             listed: Some(event.listed),
             pice: None,
             low_pice: None,
         };
 
-        dto.update(self.pool.clone()).await
+        dto.save(self.pool.clone()).await
     }
 
     // 下架二手房
@@ -103,7 +84,7 @@ impl MysqlHouseRepository {
         &self,
         event: SecondHandUnlistedEvent,
     ) -> Result<(), diesel::result::Error> {
-        let dto = UpdateHouseSecondHandListedDto {
+        let dto = SaveHouseSecondHandListedDto {
             house_id: event.house_id,
             community_name: event.community_name,
             unlisted_time: Some(event.unlisted_time),
@@ -113,7 +94,7 @@ impl MysqlHouseRepository {
             low_pice: None,
         };
 
-        dto.update(self.pool.clone()).await
+        dto.save(self.pool.clone()).await
     }
 
     // 获取上架的数据
@@ -322,8 +303,11 @@ impl MysqlHouseRepository {
     pub async fn list_by_owner_name(&self, input_owner_name: String) -> Vec<HousePO> {
         use crate::schema::house::dsl::*;
         let mut conn = self.pool.get().unwrap();
+        let like_name = format!("%{}%", input_owner_name);
+        println!("like_name: {}", like_name);
+
         house
-            .filter(owner_name.eq(input_owner_name))
+            .filter(owner_name.like(like_name))
             .load::<HousePO>(&mut conn)
             .expect("Error loading houses")
     }

@@ -1,8 +1,8 @@
 use actix_web::web;
 
 use crate::presentation::handlers::residential::{
-    create_residential, delete_residential, get_residential_by_community_name, list,
-    update_residential,
+    create_residential, delete_residential, get_community_names, get_residential_by_community_name,
+    list, update_residential,
 };
 
 pub fn routes(config: &mut web::ServiceConfig) {
@@ -12,6 +12,7 @@ pub fn routes(config: &mut web::ServiceConfig) {
             .service(update_residential)
             .service(list)
             .service(get_residential_by_community_name)
-            .service(delete_residential),
+            .service(delete_residential)
+            .service(get_community_names),
     );
 }

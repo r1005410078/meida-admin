@@ -1,4 +1,5 @@
 use actix_web::{get, post, web, HttpResponse};
+use serde_json::json;
 use tokio::sync::mpsc::Sender;
 
 use crate::{
@@ -25,7 +26,7 @@ async fn create_house(
     let house = NewHouseCommandHandler::new(repo.into_inner(), sender.into_inner());
 
     match house.handle(command.into_inner()).await {
-        Ok(_) => HttpResponse::Ok().finish(),
+        Ok(house_id) => HttpResponse::Ok().json(json!({ "house_id": house_id })),
         Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
     }
 }
@@ -39,7 +40,7 @@ async fn update_house(
     let house = UpdateHouseCommandHandler::new(repo.into_inner(), sender.into_inner());
 
     match house.handle(command.into_inner()).await {
-        Ok(_) => HttpResponse::Ok().finish(),
+        Ok(house_id) => HttpResponse::Ok().json(json!({ "house_id": house_id })),
         Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
     }
 }

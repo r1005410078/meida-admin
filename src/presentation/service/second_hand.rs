@@ -2,8 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     domain::houses::events::second_hand::{
-        NewSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent, SecondHandUnlistedEvent,
-        UpdateSecondHandEvent,
+        SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent, SecondHandUnlistedEvent,
     },
     infrastructure::repositories::{
         dao::house_second_hand::{QueryHouseSecondHandDto, QueryHouseSecondHandSoldDto},
@@ -21,19 +20,14 @@ impl SecondHandService {
         Self { repo }
     }
 
-    // 创建二手房
-    pub async fn create(&self, event: NewSecondHandEvent) -> Result<(), diesel::result::Error> {
-        self.repo.create_house_second_hand(event).await
-    }
-
-    // 更新二手房
-    pub async fn update(&self, event: UpdateSecondHandEvent) -> Result<(), diesel::result::Error> {
-        self.repo.update_house_second_hand(event).await
+    // 保存二手房
+    pub async fn save(&self, event: SaveSecondHandEvent) -> Result<(), diesel::result::Error> {
+        self.repo.save_house_second_hand(event).await
     }
 
     // 保存上架数据
     pub async fn listed(&self, event: SecondHandListedEvent) -> Result<(), diesel::result::Error> {
-        self.repo.save_house_second_hand(event).await
+        self.repo.listed_house_second_hand(event).await
     }
 
     // 获取上架的数据

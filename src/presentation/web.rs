@@ -11,8 +11,8 @@ use crate::{
         },
         residential::{DeleteResidentialEvent, NewResidentialEvent, UpdateResidentialEvent},
         second_hand::{
-            NewSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
-            SecondHandUnlistedEvent, UpdateSecondHandEvent,
+            SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
+            SecondHandUnlistedEvent,
         },
     },
     infrastructure::repositories::{
@@ -71,15 +71,8 @@ pub async fn run() -> std::io::Result<()> {
     );
 
     // 二手房事件
-    let create_second_hand_sender = web::Data::new(
-        EventChannel::<NewSecondHandEvent>::new(SecondHandEventHandler::new(
-            house.clone().into_inner(),
-        ))
-        .sender,
-    );
-
-    let update_second_hand_sender = web::Data::new(
-        EventChannel::<UpdateSecondHandEvent>::new(SecondHandEventHandler::new(
+    let save_second_hand_sender = web::Data::new(
+        EventChannel::<SaveSecondHandEvent>::new(SecondHandEventHandler::new(
             house.clone().into_inner(),
         ))
         .sender,
@@ -153,8 +146,7 @@ pub async fn run() -> std::io::Result<()> {
             .app_data(second_hand_listed_sender.clone())
             .app_data(second_hand_unlisted_sender.clone())
             .app_data(second_hand_scale_sender.clone())
-            .app_data(create_second_hand_sender.clone())
-            .app_data(update_second_hand_sender.clone())
+            .app_data(save_second_hand_sender.clone())
             .app_data(save_rental_house_sender.clone())
             .app_data(rental_house_listed_event.clone())
             .app_data(rental_house_unlisted_event.clone())

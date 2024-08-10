@@ -5,8 +5,7 @@ use async_trait::async_trait;
 use crate::{
     common::event_channel::EventHandler,
     domain::houses::events::second_hand::{
-        NewSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent, SecondHandUnlistedEvent,
-        UpdateSecondHandEvent,
+        SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent, SecondHandUnlistedEvent,
     },
     infrastructure::repositories::mysql_house_repository::MysqlHouseRepository,
     presentation::service::second_hand::SecondHandService,
@@ -26,19 +25,9 @@ impl SecondHandEventHandler {
 
 // 创建二手房
 #[async_trait]
-impl EventHandler<NewSecondHandEvent> for SecondHandEventHandler {
-    async fn handle(&self, event: NewSecondHandEvent) -> anyhow::Result<()> {
-        self.service.create(event).await?;
-
-        Ok(())
-    }
-}
-
-// 创建二手房
-#[async_trait]
-impl EventHandler<UpdateSecondHandEvent> for SecondHandEventHandler {
-    async fn handle(&self, event: UpdateSecondHandEvent) -> anyhow::Result<()> {
-        self.service.update(event).await?;
+impl EventHandler<SaveSecondHandEvent> for SecondHandEventHandler {
+    async fn handle(&self, event: SaveSecondHandEvent) -> anyhow::Result<()> {
+        self.service.save(event).await?;
 
         Ok(())
     }

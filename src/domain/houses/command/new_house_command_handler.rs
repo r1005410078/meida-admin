@@ -18,9 +18,9 @@ impl<R: HouseRepository> NewHouseCommandHandler<R> {
         Self { repo, sender }
     }
 
-    pub async fn handle(&self, command: NewHouseCommand) -> Result<(), diesel::result::Error> {
+    pub async fn handle(&self, command: NewHouseCommand) -> Result<String, diesel::result::Error> {
         let agg = HouseAggregate::add_house(command, self.sender.clone()).await;
         self.repo.save(&agg).await?;
-        Ok(())
+        Ok(agg.house_id)
     }
 }

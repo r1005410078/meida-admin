@@ -54,6 +54,14 @@ async fn list(repo: web::Data<MysqlResidentialRepository>) -> HttpResponse {
     HttpResponse::Ok().json(list)
 }
 
+#[get("/get_community_names")]
+async fn get_community_names(repo: web::Data<MysqlResidentialRepository>) -> HttpResponse {
+    let names = ResidentialService::new(repo.into_inner())
+        .get_community_names()
+        .await;
+    HttpResponse::Ok().json(names)
+}
+
 #[get("/get_residential/{community_name}")]
 async fn get_residential_by_community_name(
     repo: web::Data<MysqlResidentialRepository>,

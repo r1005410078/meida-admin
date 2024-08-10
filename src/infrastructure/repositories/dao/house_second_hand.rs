@@ -7,39 +7,17 @@ use crate::{
 };
 use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
-use diesel::{prelude::AsChangeset, ExpressionMethods, QueryDsl, RunQueryDsl};
+use diesel::{
+    dsl::{exists, select},
+    prelude::AsChangeset,
+    ExpressionMethods, QueryDsl, RunQueryDsl,
+};
 use diesel::{prelude::Insertable, query_dsl::methods::SelectDsl, SelectableHelper};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
+#[derive(Debug, Clone, Serialize, Deserialize, AsChangeset, Insertable)]
 #[diesel(table_name = house_second_hand)]
-pub struct NewHouseSecondHandListedDto {
-    pub house_id: String,
-    pub community_name: String,
-    pub pice: BigDecimal,
-    pub low_pice: Option<BigDecimal>,
-    pub listed: i8,
-    pub listed_time: Option<NaiveDateTime>,
-    pub unlisted_time: Option<NaiveDateTime>,
-}
-
-impl NewHouseSecondHandListedDto {
-    pub async fn insert_into(&self, pool: DBPool) -> Result<(), diesel::result::Error> {
-        let mut conn: r2d2::PooledConnection<
-            diesel::r2d2::ConnectionManager<diesel::MysqlConnection>,
-        > = pool.get().unwrap();
-        diesel::insert_into(house_second_hand::table)
-            .values(self)
-            .execute(&mut conn)
-            .expect("Error saving new house");
-
-        Ok(())
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, AsChangeset)]
-#[diesel(table_name = house_second_hand)]
-pub struct UpdateHouseSecondHandListedDto {
+pub struct SaveHouseSecondHandListedDto {
     pub house_id: String,
     pub community_name: String,
     pub pice: Option<BigDecimal>,
@@ -49,15 +27,30 @@ pub struct UpdateHouseSecondHandListedDto {
     pub unlisted_time: Option<NaiveDateTime>,
 }
 
-impl UpdateHouseSecondHandListedDto {
-    pub async fn update(&self, pool: DBPool) -> Result<(), diesel::result::Error> {
+impl SaveHouseSecondHandListedDto {
+    pub async fn save(&self, pool: DBPool) -> Result<(), diesel::result::Error> {
         use crate::schema::house_second_hand::dsl::*;
         let mut conn = pool.get().unwrap();
-        diesel::update(house_second_hand)
-            .filter(house_id.eq(&self.house_id))
-            .set(self)
-            .execute(&mut conn)
-            .expect("Error saving new house");
+
+        let existed: bool = select(exists(
+            house_second_hand.filter(house_id.eq(&self.house_id)),
+        ))
+        .get_result(&mut conn)
+        .expect("Error checking if house_second_hand exists");
+
+        if !existed {
+            diesel::insert_into(house_second_hand)
+                .values(self)
+                .execute(&mut conn)
+                .expect("Error saving new house");
+        } else {
+            diesel::update(house_second_hand)
+                .filter(house_id.eq(&self.house_id))
+                .set(self)
+                .execute(&mut conn)
+                .expect("Error saving new house");
+        }
+
         Ok(())
     }
 }
@@ -87,7 +80,9 @@ impl NewHouseSecondHandSoldDto {
 
 // 登记的二手房
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct QueryHouseSecondHandDto {}
+pub struct QueryHouseSecondHandDto {
+    listed: Option<i8>,
+}
 
 impl QueryHouseSecondHandDto {
     pub fn list(&self, pool: DBPool) -> Vec<HouseSecondHandListed> {
@@ -98,14 +93,21 @@ impl QueryHouseSecondHandDto {
 
         let mut conn = pool.get().unwrap();
 
-        SelectDsl::select(
+        let mut result = SelectDsl::select(
             house_second_hand
                 .inner_join(house::table.on(house::house_id.eq(house_id)))
                 .inner_join(residential::table.on(residential::community_name.eq(community_name))),
             HouseSecondHandListed::as_select(),
         )
-        .load::<HouseSecondHandListed>(&mut conn)
-        .expect("Error loading houses")
+        .into_boxed();
+
+        if let Some(ref _listed) = self.listed {
+            result = result.filter(listed.eq(_listed));
+        }
+
+        result
+            .load::<HouseSecondHandListed>(&mut conn)
+            .expect("Error loading houses")
     }
 }
 

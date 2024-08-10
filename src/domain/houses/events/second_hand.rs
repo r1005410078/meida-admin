@@ -2,21 +2,12 @@ use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
-// 更新二手房
+// 保存二手房
 #[derive(Debug, Clone, Serialize)]
-pub struct UpdateSecondHandEvent {
+pub struct SaveSecondHandEvent {
     pub house_id: String,
     pub community_name: String,
     pub pice: Option<BigDecimal>,
-    pub low_pice: Option<BigDecimal>,
-}
-
-// 新增二手房
-#[derive(Debug, Clone, Serialize)]
-pub struct NewSecondHandEvent {
-    pub house_id: String,
-    pub community_name: String,
-    pub pice: BigDecimal,
     pub low_pice: Option<BigDecimal>,
 }
 

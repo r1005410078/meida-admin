@@ -38,6 +38,10 @@ impl ResidentialService {
         self.repo.list().await
     }
 
+    pub async fn get_community_names(&self) -> Vec<String> {
+        self.repo.get_community_names().await
+    }
+
     pub async fn get_residential_by_community_name(
         &self,
         input_community_name: String,

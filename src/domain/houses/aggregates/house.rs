@@ -19,8 +19,7 @@ use crate::{
             second_hand_command::{
                 SecondHandListedCommand, SecondHandSoldCommand, SecondHandUnlistedCommand,
             },
-            second_hand_new_command::NewSecondHandCommand,
-            second_hand_update_command::UpdateSecondHandCommand,
+            second_hand_save_command::SaveSecondHandCommand,
             update_house_command::UpdateHouseCommand,
         },
         events::{
@@ -30,8 +29,8 @@ use crate::{
                 SaveRentalHouseEvent,
             },
             second_hand::{
-                NewSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
-                SecondHandUnlistedEvent, UpdateSecondHandEvent,
+                SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
+                SecondHandUnlistedEvent,
             },
         },
         object_value::second_hand::{RentalHouseStatus, SecondHandStatus},
@@ -118,31 +117,14 @@ impl HouseAggregate {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 impl HouseAggregate {
-    // 新增二手房
-    pub async fn second_hand_new(
-        &mut self,
-        command: NewSecondHandCommand,
-        sender: EventSender<NewSecondHandEvent>,
-    ) {
-        sender
-            .send(NewSecondHandEvent {
-                house_id: command.house_id.clone(),
-                community_name: self.community_name.clone(),
-                pice: command.pice,
-                low_pice: command.low_pice,
-            })
-            .await
-            .unwrap();
-    }
-
-    // 更新二手房
+    // 保存二手房
     pub async fn second_hand_update(
         &mut self,
-        command: UpdateSecondHandCommand,
-        sender: EventSender<UpdateSecondHandEvent>,
+        command: SaveSecondHandCommand,
+        sender: EventSender<SaveSecondHandEvent>,
     ) {
         sender
-            .send(UpdateSecondHandEvent {
+            .send(SaveSecondHandEvent {
                 house_id: command.house_id.clone(),
                 community_name: self.community_name.clone(),
                 pice: command.pice,
@@ -161,21 +143,20 @@ impl HouseAggregate {
         // 如果给是下架或成来没操作过才能上架
         if vec![SecondHandStatus::Unlisted, SecondHandStatus::Unknown]
             .contains(&self.second_hand_status())
-        {
-            // 更新上架时间
-            self.second_hand_listed_time = Some(Utc::now().naive_utc());
+        {}
+        // 更新上架时间
+        self.second_hand_listed_time = Some(Utc::now().naive_utc());
 
-            // 发送事件
-            sender
-                .send(SecondHandListedEvent {
-                    house_id: command.house_id.clone(),
-                    community_name: self.community_name.clone(),
-                    listed: 1,
-                    listed_time: self.second_hand_listed_time,
-                })
-                .await
-                .unwrap();
-        }
+        // 发送事件
+        sender
+            .send(SecondHandListedEvent {
+                house_id: command.house_id.clone(),
+                community_name: self.community_name.clone(),
+                listed: 1,
+                listed_time: self.second_hand_listed_time,
+            })
+            .await
+            .unwrap();
     }
 
     // 二手房下架
@@ -185,20 +166,19 @@ impl HouseAggregate {
         sender: EventSender<SecondHandUnlistedEvent>,
     ) {
         // 如果给是上架才能下架
-        if self.second_hand_status() == SecondHandStatus::Listed {
-            // 更新下架时间
-            self.second_hand_unlisted_time = Some(Utc::now().naive_utc());
-            // 发送事件
-            sender
-                .send(SecondHandUnlistedEvent {
-                    house_id: command.house_id.clone(),
-                    community_name: self.community_name.clone(),
-                    listed: 0,
-                    unlisted_time: Utc::now().naive_utc(),
-                })
-                .await
-                .unwrap();
-        }
+        if self.second_hand_status() == SecondHandStatus::Listed {}
+        // 更新下架时间
+        self.second_hand_unlisted_time = Some(Utc::now().naive_utc());
+        // 发送事件
+        sender
+            .send(SecondHandUnlistedEvent {
+                house_id: command.house_id.clone(),
+                community_name: self.community_name.clone(),
+                listed: 0,
+                unlisted_time: Utc::now().naive_utc(),
+            })
+            .await
+            .unwrap();
     }
 
     // 二手卖出
@@ -208,24 +188,24 @@ impl HouseAggregate {
         sender: EventSender<SecondHandSoldEvent>,
     ) {
         // 如果上架了才能卖出
-        if self.second_hand_status() == SecondHandStatus::Listed {
-            // 清除上架时间
-            self.second_hand_listed_time.take();
-            self.second_hand_unlisted_time.take();
-            // 更新卖出时间
-            self.second_hand_sale_time = Some(Utc::now().naive_utc());
-            // 发送事件
-            sender
-                .send(SecondHandSoldEvent {
-                    house_id: command.house_id.clone(),
-                    community_name: self.community_name.clone(),
-                    days_to_sell: 0,
-                    sold_price: command.sale_price.clone(),
-                    sold_time: self.second_hand_sale_time.unwrap(),
-                })
-                .await
-                .unwrap();
-        }
+        if self.second_hand_status() == SecondHandStatus::Listed {}
+
+        // 清除上架时间
+        self.second_hand_listed_time.take();
+        self.second_hand_unlisted_time.take();
+        // 更新卖出时间
+        self.second_hand_sale_time = Some(Utc::now().naive_utc());
+        // 发送事件
+        sender
+            .send(SecondHandSoldEvent {
+                house_id: command.house_id.clone(),
+                community_name: self.community_name.clone(),
+                days_to_sell: 0,
+                sold_price: command.sale_price.clone(),
+                sold_time: self.second_hand_sale_time.unwrap(),
+            })
+            .await
+            .unwrap();
     }
 
     // 二手房状态

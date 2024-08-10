@@ -1,7 +1,7 @@
 use actix_web::web;
 
 use crate::presentation::handlers::house::{
-    create_house, delete_house, get_house_by_house_id, list, update_house,
+    create_house, delete_house, get_house_by_house_id, list, list_by_owner_name, update_house,
 };
 
 pub fn routes(config: &mut web::ServiceConfig) {
@@ -11,6 +11,7 @@ pub fn routes(config: &mut web::ServiceConfig) {
             .service(update_house)
             .service(list)
             .service(get_house_by_house_id)
-            .service(delete_house),
+            .service(delete_house)
+            .service(list_by_owner_name),
     );
 }

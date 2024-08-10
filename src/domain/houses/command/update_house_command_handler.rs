@@ -15,12 +15,17 @@ impl<R: HouseRepository> UpdateHouseCommandHandler<R> {
         Self { repo, sender }
     }
 
-    pub async fn handle(&self, command: UpdateHouseCommand) -> Result<(), diesel::result::Error> {
+    pub async fn handle(
+        &self,
+        command: UpdateHouseCommand,
+    ) -> Result<String, diesel::result::Error> {
         if let Some(mut aggregate) = self.repo.get_by_id(command.house_id.clone()).await {
-            aggregate.update_house(command, self.sender.clone()).await;
+            aggregate
+                .update_house(command.clone(), self.sender.clone())
+                .await;
             self.repo.save(&aggregate).await?;
         }
 
-        Ok(())
+        Ok(command.house_id)
     }
 }
