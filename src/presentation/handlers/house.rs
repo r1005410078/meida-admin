@@ -13,7 +13,9 @@ use crate::{
         },
         events::house::{DeleteHouseEvent, NewHouseEvent, UpdateHouseEvent},
     },
-    infrastructure::repositories::mysql_house_repository::MysqlHouseRepository,
+    infrastructure::repositories::{
+        dao::house::QueryHouseDao, mysql_house_repository::MysqlHouseRepository,
+    },
     presentation::service::house::HouseService,
 };
 
@@ -60,8 +62,13 @@ async fn delete_house(
 }
 
 #[get("/list")]
-async fn list(repo: web::Data<MysqlHouseRepository>) -> HttpResponse {
-    let list = HouseService::new(repo.into_inner()).list().await;
+async fn list(
+    repo: web::Data<MysqlHouseRepository>,
+    query: web::Query<QueryHouseDao>,
+) -> HttpResponse {
+    let list = HouseService::new(repo.into_inner())
+        .list(query.into_inner())
+        .await;
 
     HttpResponse::Ok().json(list)
 }

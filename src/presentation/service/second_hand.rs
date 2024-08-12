@@ -8,6 +8,7 @@ use crate::{
         dao::house_second_hand::{QueryHouseSecondHandDto, QueryHouseSecondHandSoldDto},
         entities::house_second_hand::{HouseSecondHandListed, HouseSecondHandSold},
         mysql_house_repository::MysqlHouseRepository,
+        object_value::query_value::TableData,
     },
 };
 
@@ -31,7 +32,10 @@ impl SecondHandService {
     }
 
     // 获取上架的数据
-    pub async fn list_listed(&self, query: QueryHouseSecondHandDto) -> Vec<HouseSecondHandListed> {
+    pub async fn list_listed(
+        &self,
+        query: QueryHouseSecondHandDto,
+    ) -> TableData<HouseSecondHandListed> {
         self.repo.house_second_hand_listed_list(query).await
     }
 

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use super::dao::house::QueryHouseDao;
 use super::dao::house_second_hand::{
     NewHouseSecondHandSoldDto, QueryHouseSecondHandDto, QueryHouseSecondHandSoldDto,
     SaveHouseSecondHandListedDto,
@@ -9,6 +10,7 @@ use super::dao::rental_house::{
 };
 use super::entities::house_second_hand::{HouseSecondHandListed, HouseSecondHandSold};
 use super::entities::rental_house::{RentalHouseListed, RentalHouseSold};
+use super::object_value::query_value::TableData;
 use crate::domain::houses::entities::house::HousePO;
 use crate::domain::houses::events::house::{NewHouseEvent, UpdateHouseEvent};
 use crate::domain::houses::events::rental_house::{
@@ -101,7 +103,7 @@ impl MysqlHouseRepository {
     pub async fn house_second_hand_listed_list(
         &self,
         query: QueryHouseSecondHandDto,
-    ) -> Vec<HouseSecondHandListed> {
+    ) -> TableData<HouseSecondHandListed> {
         query.list(self.pool.clone())
     }
 
@@ -290,13 +292,8 @@ impl MysqlHouseRepository {
             .expect("Error loading house")
     }
 
-    pub async fn list(&self) -> Vec<HousePO> {
-        use crate::schema::house::dsl::*;
-
-        let mut conn = self.pool.get().unwrap();
-        house
-            .load::<HousePO>(&mut conn)
-            .expect("Error loading houses")
+    pub async fn list(&self, query: QueryHouseDao) -> TableData<HousePO> {
+        query.list(self.pool.clone())
     }
 
     // 根据户主名称查询
@@ -304,7 +301,6 @@ impl MysqlHouseRepository {
         use crate::schema::house::dsl::*;
         let mut conn = self.pool.get().unwrap();
         let like_name = format!("%{}%", input_owner_name);
-        println!("like_name: {}", like_name);
 
         house
             .filter(owner_name.like(like_name))

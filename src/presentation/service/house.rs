@@ -5,7 +5,10 @@ use crate::{
         entities::house::HousePO,
         events::house::{NewHouseEvent, UpdateHouseEvent},
     },
-    infrastructure::repositories::mysql_house_repository::MysqlHouseRepository,
+    infrastructure::repositories::{
+        dao::house::QueryHouseDao, mysql_house_repository::MysqlHouseRepository,
+        object_value::query_value::TableData,
+    },
 };
 
 pub struct HouseService {
@@ -29,8 +32,8 @@ impl HouseService {
         self.repo.delete(house_id).await
     }
 
-    pub async fn list(&self) -> Vec<HousePO> {
-        self.repo.list().await
+    pub async fn list(&self, query: QueryHouseDao) -> TableData<HousePO> {
+        self.repo.list(query).await
     }
 
     pub async fn get_by_house_id(&self, input_house_id: String) -> Option<HousePO> {

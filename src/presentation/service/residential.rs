@@ -5,7 +5,9 @@ use crate::{
         entities::residential::Residential,
         events::residential::{NewResidentialEvent, UpdateResidentialEvent},
     },
-    infrastructure::repositories::mysql_residential_repository::MysqlResidentialRepository,
+    infrastructure::repositories::{
+        dao::community::QueryCommunityDao, mysql_residential_repository::MysqlResidentialRepository,
+    },
 };
 
 pub struct ResidentialService {
@@ -34,8 +36,8 @@ impl ResidentialService {
             .await
     }
 
-    pub async fn list(&self) -> Vec<Residential> {
-        self.repo.list().await
+    pub async fn list(&self, query: QueryCommunityDao) -> Vec<Residential> {
+        self.repo.list(query).await
     }
 
     pub async fn get_community_names(&self) -> Vec<String> {

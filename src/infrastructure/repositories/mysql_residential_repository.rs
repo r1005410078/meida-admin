@@ -13,6 +13,8 @@ use diesel::OptionalExtension;
 use diesel::{query_dsl::QueryDsl, ExpressionMethods, RunQueryDsl};
 use std::sync::Arc;
 
+use super::dao::community::QueryCommunityDao;
+
 pub struct MysqlResidentialRepository {
     pool: DBPool,
 }
@@ -50,12 +52,8 @@ impl MysqlResidentialRepository {
         Ok(())
     }
 
-    pub async fn list(&self) -> Vec<Residential> {
-        use crate::schema::residential::dsl::*;
-        let conn = &mut self.pool.get().unwrap();
-        residential
-            .get_results::<Residential>(conn)
-            .expect("Error loading user")
+    pub async fn list(&self, query: QueryCommunityDao) -> Vec<Residential> {
+        query.list(self.pool.clone())
     }
 
     pub async fn get_community_names(&self) -> Vec<String> {

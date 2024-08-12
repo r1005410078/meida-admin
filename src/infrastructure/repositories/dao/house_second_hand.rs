@@ -1,16 +1,19 @@
 use crate::{
     infrastructure::{
         db::connection::DBPool,
-        repositories::entities::house_second_hand::{HouseSecondHandListed, HouseSecondHandSold},
+        repositories::{
+            entities::house_second_hand::{HouseSecondHandListed, HouseSecondHandSold},
+            object_value::query_value::{TableData, TimeRange, YearRange},
+        },
     },
     schema::{house_second_hand, house_second_hand_sold},
 };
 use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
 use diesel::{
-    dsl::{exists, select},
+    dsl::{count_star, exists, select},
     prelude::AsChangeset,
-    ExpressionMethods, QueryDsl, RunQueryDsl,
+    ExpressionMethods, QueryDsl, RunQueryDsl, TextExpressionMethods,
 };
 use diesel::{prelude::Insertable, query_dsl::methods::SelectDsl, SelectableHelper};
 use serde::{Deserialize, Serialize};
@@ -82,32 +85,145 @@ impl NewHouseSecondHandSoldDto {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryHouseSecondHandDto {
     listed: Option<i8>,
+    pice: Option<BigDecimal>,
+
+    // 房源
+    pub house_address: Option<String>,
+    pub house_type: Option<String>,
+    pub area: Option<BigDecimal>,
+    pub bedrooms: Option<i32>,
+    pub living_rooms: Option<i32>,
+    pub bathrooms: Option<i32>,
+    pub orientation: Option<String>,
+    pub decoration_status: Option<String>,
+    pub status: Option<String>,
+    pub house_description: Option<String>,
+    pub owner_name: Option<String>,
+    pub owner_phone: Option<String>,
+
+    // 小区
+    pub community_name: Option<String>,
+    pub community_type: Option<String>,
+    pub region: Option<String>,
+    pub year_built: Option<YearRange>,
+
+    // 分页
+    pub page_index: Option<i64>,
+    pub page_size: Option<i64>,
 }
 
 impl QueryHouseSecondHandDto {
-    pub fn list(&self, pool: DBPool) -> Vec<HouseSecondHandListed> {
+    pub fn list(&self, pool: DBPool) -> TableData<HouseSecondHandListed> {
         use crate::schema::house;
         use crate::schema::house_second_hand::dsl::*;
         use crate::schema::residential;
         use diesel::JoinOnDsl;
 
-        let mut conn = pool.get().unwrap();
+        let conn = &mut pool.get().unwrap();
 
-        let mut result = SelectDsl::select(
-            house_second_hand
-                .inner_join(house::table.on(house::house_id.eq(house_id)))
-                .inner_join(residential::table.on(residential::community_name.eq(community_name))),
-            HouseSecondHandListed::as_select(),
-        )
-        .into_boxed();
+        let get_query = || {
+            let mut result = SelectDsl::select(
+                house_second_hand
+                    .inner_join(house::table.on(house::house_id.eq(house_id)))
+                    .inner_join(
+                        residential::table.on(residential::community_name.eq(community_name)),
+                    ),
+                HouseSecondHandListed::as_select(),
+            )
+            .into_boxed();
 
-        if let Some(ref _listed) = self.listed {
-            result = result.filter(listed.eq(_listed));
-        }
+            if let Some(ref input_listed) = self.listed {
+                result = result.filter(listed.eq(input_listed));
+            }
 
-        result
-            .load::<HouseSecondHandListed>(&mut conn)
-            .expect("Error loading houses")
+            if let Some(ref input_pice) = self.pice {
+                result = result.filter(pice.ge(input_pice));
+            }
+
+            ////////// 房源
+
+            if let Some(ref input_address) = self.house_address {
+                result = result.filter(house::house_address.like(format!("%{}%", input_address)));
+            }
+
+            if let Some(ref input_house_type) = self.house_type {
+                result = result.filter(house::house_type.eq(input_house_type));
+            }
+
+            if let Some(ref input_area) = self.area {
+                result = result.filter(house::area.ge(input_area));
+            }
+
+            if let Some(ref input_bedrooms) = self.bedrooms {
+                result = result.filter(house::bedrooms.ge(input_bedrooms));
+            }
+
+            if let Some(ref input_living_rooms) = self.living_rooms {
+                result = result.filter(house::living_rooms.ge(input_living_rooms));
+            }
+
+            if let Some(ref input_bathrooms) = self.bathrooms {
+                result = result.filter(house::bathrooms.ge(input_bathrooms));
+            }
+
+            if let Some(ref input_orientation) = self.orientation {
+                result = result.filter(house::orientation.eq(input_orientation));
+            }
+
+            if let Some(ref input_decoration_status) = self.decoration_status {
+                result = result.filter(house::decoration_status.eq(input_decoration_status));
+            }
+
+            if let Some(ref input_status) = self.status {
+                result = result.filter(house::status.eq(input_status));
+            }
+
+            if let Some(ref input_house_description) = self.house_description {
+                result = result.filter(
+                    house::house_description.like(format!("%{}%", input_house_description)),
+                );
+            }
+
+            if let Some(ref input_owner_name) = self.owner_name {
+                result = result.filter(house::owner_name.like(format!("%{}%", input_owner_name)));
+            }
+
+            if let Some(ref input_owner_phone) = self.owner_phone {
+                result = result.filter(house::owner_phone.like(format!("%{}%", input_owner_phone)));
+            }
+
+            if let Some(ref input_community_name) = self.community_name {
+                result = result.filter(residential::community_name.eq(input_community_name));
+            }
+
+            if let Some(ref input_community_type) = self.community_type {
+                result = result.filter(residential::community_type.like(input_community_type));
+            }
+
+            if let Some(ref input_region) = self.region {
+                result = result.filter(residential::region.eq(input_region));
+            }
+
+            result
+        };
+
+        let total = get_query()
+            .count()
+            .get_result(conn)
+            .expect("Error loading houses");
+
+        let page_index = self.page_index.unwrap_or(1);
+        let page_size = self.page_size.unwrap_or(10);
+
+        let result = get_query()
+            .offset((page_index - 1) * page_size)
+            .limit(page_size);
+
+        let data = result
+            .load::<HouseSecondHandListed>(conn)
+            .expect("Error loading houses");
+
+        TableData::new(data, total)
     }
 }
 

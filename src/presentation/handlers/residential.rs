@@ -15,7 +15,9 @@ use crate::{
             DeleteResidentialEvent, NewResidentialEvent, UpdateResidentialEvent,
         },
     },
-    infrastructure::repositories::mysql_residential_repository::MysqlResidentialRepository,
+    infrastructure::repositories::{
+        dao::community::QueryCommunityDao, mysql_residential_repository::MysqlResidentialRepository,
+    },
     presentation::service::residential::ResidentialService,
 };
 
@@ -48,8 +50,13 @@ async fn update_residential(
 }
 
 #[get("/list")]
-async fn list(repo: web::Data<MysqlResidentialRepository>) -> HttpResponse {
-    let list = ResidentialService::new(repo.into_inner()).list().await;
+async fn list(
+    repo: web::Data<MysqlResidentialRepository>,
+    query: web::Query<QueryCommunityDao>,
+) -> HttpResponse {
+    let list = ResidentialService::new(repo.into_inner())
+        .list(query.into_inner())
+        .await;
 
     HttpResponse::Ok().json(list)
 }
