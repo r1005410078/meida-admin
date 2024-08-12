@@ -1,24 +1,9 @@
 use std::sync::Arc;
 
 use super::dao::house::QueryHouseDao;
-use super::dao::house_second_hand::{
-    NewHouseSecondHandSoldDto, QueryHouseSecondHandDto, QueryHouseSecondHandSoldDto,
-    SaveHouseSecondHandListedDto,
-};
-use super::dao::rental_house::{
-    QueryRentalHouseListedDto, QueryRentalHouseSoldDto, RentalHouseSoldDao, SaveRentalHouseDao,
-};
-use super::entities::house_second_hand::{HouseSecondHandListed, HouseSecondHandSold};
-use super::entities::rental_house::{RentalHouseListed, RentalHouseSold};
 use super::object_value::query_value::TableData;
 use crate::domain::houses::entities::house::HousePO;
 use crate::domain::houses::events::house::{NewHouseEvent, UpdateHouseEvent};
-use crate::domain::houses::events::rental_house::{
-    RentalHouseListedEvent, RentalHouseSoldEvent, RentalHouseUnListedEvent, SaveRentalHouseEvent,
-};
-use crate::domain::houses::events::second_hand::{
-    SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent, SecondHandUnlistedEvent,
-};
 use crate::{
     domain::houses::{aggregates::house::HouseAggregate, repositories::house::HouseRepository},
     infrastructure::db::connection::{establish_connection, DBPool},
@@ -30,7 +15,7 @@ use diesel::{OptionalExtension, TextExpressionMethods};
 use diesel::{QueryDsl, RunQueryDsl};
 
 pub struct MysqlHouseRepository {
-    pool: DBPool,
+    pub pool: DBPool,
 }
 
 impl MysqlHouseRepository {
@@ -43,215 +28,8 @@ impl MysqlHouseRepository {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// 二手房上架下架卖出
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-impl MysqlHouseRepository {
-    // 保存二手房
-    pub async fn save_house_second_hand(
-        &self,
-        event: SaveSecondHandEvent,
-    ) -> Result<(), diesel::result::Error> {
-        let dto = SaveHouseSecondHandListedDto {
-            house_id: event.house_id,
-            community_name: event.community_name,
-            listed_time: None,
-            unlisted_time: None,
-            listed: None,
-            pice: event.pice,
-            low_pice: event.low_pice,
-        };
-        dto.save(self.pool.clone()).await
-    }
-
-    // 上架二手房
-    pub async fn listed_house_second_hand(
-        &self,
-        event: SecondHandListedEvent,
-    ) -> Result<(), diesel::result::Error> {
-        let dto = SaveHouseSecondHandListedDto {
-            house_id: event.house_id,
-            community_name: event.community_name,
-            listed_time: None,
-            unlisted_time: None,
-            listed: Some(event.listed),
-            pice: None,
-            low_pice: None,
-        };
-
-        dto.save(self.pool.clone()).await
-    }
-
-    // 下架二手房
-    pub async fn unlisted_house_second_hand(
-        &self,
-        event: SecondHandUnlistedEvent,
-    ) -> Result<(), diesel::result::Error> {
-        let dto = SaveHouseSecondHandListedDto {
-            house_id: event.house_id,
-            community_name: event.community_name,
-            unlisted_time: Some(event.unlisted_time),
-            listed: Some(event.listed),
-            listed_time: None,
-            pice: None,
-            low_pice: None,
-        };
-
-        dto.save(self.pool.clone()).await
-    }
-
-    // 获取上架的数据
-    pub async fn house_second_hand_listed_list(
-        &self,
-        query: QueryHouseSecondHandDto,
-    ) -> TableData<HouseSecondHandListed> {
-        query.list(self.pool.clone())
-    }
-
-    // 保存卖出二手房
-    pub async fn save_sold_house_second_hand(
-        &self,
-        event: SecondHandSoldEvent,
-    ) -> Result<(), diesel::result::Error> {
-        let dto: NewHouseSecondHandSoldDto = NewHouseSecondHandSoldDto {
-            house_id: event.house_id,
-            community_name: event.community_name,
-            days_to_sell: event.days_to_sell,
-            sold_price: event.sold_price,
-            sold_time: Some(event.sold_time),
-        };
-
-        dto.create(self.pool.clone()).await
-    }
-
-    pub async fn delete_house_second_hand_by_house_id(
-        &self,
-        input_house_id: String,
-    ) -> Result<(), diesel::result::Error> {
-        use crate::schema::house_second_hand::dsl::*;
-        let conn = &mut self.pool.get().unwrap();
-        diesel::delete(house_second_hand.filter(house_id.eq(input_house_id))).execute(conn)?;
-
-        Ok(())
-    }
-
-    pub async fn house_second_hand_sold_list(
-        &self,
-        query: QueryHouseSecondHandSoldDto,
-    ) -> Vec<HouseSecondHandSold> {
-        query.list(self.pool.clone())
-    }
-
-    pub fn house_second_hand_by_house_id(&self, input_house_id: String) -> HouseSecondHandListed {
-        use crate::schema::house;
-        use crate::schema::house_second_hand::dsl::*;
-        use crate::schema::residential;
-        use diesel::query_dsl::methods::SelectDsl;
-        use diesel::JoinOnDsl;
-
-        let mut conn = self.pool.get().unwrap();
-
-        SelectDsl::select(
-            house_second_hand
-                .inner_join(house::table.on(house::house_id.eq(house_id)))
-                .inner_join(residential::table.on(residential::community_name.eq(community_name)))
-                .filter(house_id.eq(input_house_id)),
-            HouseSecondHandListed::as_select(),
-        )
-        .first::<HouseSecondHandListed>(&mut conn)
-        .expect("Error loading houses")
-    }
-
-    // 保存出租房
-    pub async fn save_rental_house(
-        &self,
-        event: SaveRentalHouseEvent,
-    ) -> Result<(), diesel::result::Error> {
-        let dot: SaveRentalHouseDao = event.into();
-        dot.save(self.pool.clone())
-    }
-
-    pub async fn delete_rental_house_by_house_id(
-        &self,
-        input_house_id: String,
-    ) -> Result<(), diesel::result::Error> {
-        use crate::schema::house_rental::dsl::*;
-        let mut conn = self.pool.get().expect("Error loading houses");
-        diesel::delete(house_rental.filter(house_id.eq(input_house_id))).execute(&mut conn)?;
-        Ok(())
-    }
-
-    // 上架出租房
-    pub async fn listed_rental_house(
-        &self,
-        event: RentalHouseListedEvent,
-    ) -> Result<(), diesel::result::Error> {
-        let dot: SaveRentalHouseDao = event.into();
-        dot.save(self.pool.clone())
-    }
-
-    // 下架出租房
-    pub async fn unlisted_rental_house(
-        &self,
-        event: RentalHouseUnListedEvent,
-    ) -> Result<(), diesel::result::Error> {
-        let dot: SaveRentalHouseDao = event.into();
-        dot.save(self.pool.clone())
-    }
-
-    // 获取上架的出租房
-    pub async fn house_rental_house_listed_list(
-        &self,
-        query: QueryRentalHouseListedDto,
-    ) -> Vec<RentalHouseListed> {
-        query.list(self.pool.clone())
-    }
-
-    pub async fn house_rental_house_by_house_id(
-        &self,
-        input_house_id: String,
-    ) -> Option<RentalHouseListed> {
-        use crate::schema::house;
-        use crate::schema::house_rental::dsl::*;
-        use crate::schema::residential;
-        use diesel::query_dsl::methods::SelectDsl;
-        use diesel::JoinOnDsl;
-
-        let mut conn = self.pool.get().unwrap();
-
-        SelectDsl::select(
-            house_rental
-                .inner_join(house::table.on(house::house_id.eq(house_id)))
-                .inner_join(residential::table.on(residential::community_name.eq(community_name)))
-                .filter(house_id.eq(input_house_id)),
-            RentalHouseListed::as_select(),
-        )
-        .first::<RentalHouseListed>(&mut conn)
-        .optional()
-        .expect("Error loading houses")
-    }
-
-    // 保存已出租的出租房
-    pub async fn save_sold_rental_house(
-        &self,
-        event: RentalHouseSoldEvent,
-    ) -> Result<(), diesel::result::Error> {
-        let dot: RentalHouseSoldDao = event.into();
-        dot.save(self.pool.clone())
-    }
-
-    // 获取已出租的出租房
-    pub async fn house_rental_house_sold_list(
-        &self,
-        query: QueryRentalHouseSoldDto,
-    ) -> Vec<RentalHouseSold> {
-        query.list(self.pool.clone())
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// 房屋增删改
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 impl MysqlHouseRepository {
     pub async fn insert_into(&self, input_house: NewHouseEvent) -> anyhow::Result<()> {
         let mut conn = self.pool.get()?;

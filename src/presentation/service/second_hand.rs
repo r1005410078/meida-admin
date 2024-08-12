@@ -68,7 +68,10 @@ impl SecondHandService {
     }
 
     // 获取卖出的数据
-    pub async fn list_sold(&self, query: QueryHouseSecondHandSoldDto) -> Vec<HouseSecondHandSold> {
+    pub async fn list_sold(
+        &self,
+        query: QueryHouseSecondHandSoldDto,
+    ) -> TableData<HouseSecondHandSold> {
         self.repo.house_second_hand_sold_list(query).await
     }
 }

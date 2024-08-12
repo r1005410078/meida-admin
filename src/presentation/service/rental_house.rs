@@ -9,6 +9,7 @@ use crate::{
         dao::rental_house::{QueryRentalHouseListedDto, QueryRentalHouseSoldDto},
         entities::rental_house::{RentalHouseListed, RentalHouseSold},
         mysql_house_repository::MysqlHouseRepository,
+        object_value::query_value::TableData,
     },
 };
 
@@ -50,12 +51,12 @@ impl RentalHouseService {
     }
 
     // 获取上架的出租房
-    pub async fn list(&self, query: QueryRentalHouseListedDto) -> Vec<RentalHouseListed> {
+    pub async fn list(&self, query: QueryRentalHouseListedDto) -> TableData<RentalHouseListed> {
         self.repo.house_rental_house_listed_list(query).await
     }
 
     // 获取卖出的出租房
-    pub async fn list_sold(&self, query: QueryRentalHouseSoldDto) -> Vec<RentalHouseSold> {
+    pub async fn list_sold(&self, query: QueryRentalHouseSoldDto) -> TableData<RentalHouseSold> {
         self.repo.house_rental_house_sold_list(query).await
     }
 

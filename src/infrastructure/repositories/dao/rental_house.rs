@@ -9,9 +9,6 @@ use diesel::{
 use diesel::{SelectableHelper, TextExpressionMethods};
 use serde::{Deserialize, Serialize};
 
-use crate::domain::houses::events::rental_house::{
-    RentalHouseListedEvent, RentalHouseSoldEvent, RentalHouseUnListedEvent,
-};
 use crate::infrastructure::repositories::entities::rental_house::RentalHouseSold;
 use crate::infrastructure::repositories::object_value::query_value::YearRange;
 use crate::schema::house_rental_sold;
@@ -21,6 +18,12 @@ use crate::{
         db::connection::DBPool, repositories::entities::rental_house::RentalHouseListed,
     },
     schema::house_rental,
+};
+use crate::{
+    domain::houses::events::rental_house::{
+        RentalHouseListedEvent, RentalHouseSoldEvent, RentalHouseUnListedEvent,
+    },
+    infrastructure::repositories::object_value::query_value::TableData,
 };
 
 #[derive(Debug, Insertable, AsChangeset, Serialize, Deserialize)]
@@ -128,125 +131,253 @@ pub struct QueryRentalHouseListedDto {
 }
 
 impl QueryRentalHouseListedDto {
-    pub fn list(&self, pool: DBPool) -> Vec<RentalHouseListed> {
+    pub fn list(&self, pool: DBPool) -> TableData<RentalHouseListed> {
         use crate::schema::house;
         use crate::schema::house_rental::dsl::*;
         use crate::schema::residential;
         use diesel::JoinOnDsl;
 
-        let mut conn = pool.get().unwrap();
+        let conn = &mut pool.get().unwrap();
 
-        let mut result = SelectDsl::select(
-            house_rental
-                .inner_join(house::table.on(house::house_id.eq(house_id)))
-                .inner_join(residential::table.on(residential::community_name.eq(community_name))),
-            RentalHouseListed::as_select(),
-        )
-        .into_boxed();
+        let get_query = || {
+            let mut result = SelectDsl::select(
+                house_rental
+                    .inner_join(house::table.on(house::house_id.eq(house_id)))
+                    .inner_join(
+                        residential::table.on(residential::community_name.eq(community_name)),
+                    ),
+                RentalHouseListed::as_select(),
+            )
+            .into_boxed();
 
-        if let Some(ref _listed) = self.listed {
-            result = result.filter(listed.eq(_listed));
-        }
+            if let Some(ref _listed) = self.listed {
+                result = result.filter(listed.eq(_listed));
+            }
 
-        if let Some(ref _rent_pice) = self.rent_pice {
-            result = result.filter(rent_pice.ge(_rent_pice));
-        }
+            if let Some(ref _rent_pice) = self.rent_pice {
+                result = result.filter(rent_pice.ge(_rent_pice));
+            }
 
-        ////////// 房源
-        if let Some(ref input_address) = self.house_address {
-            result = result.filter(house::house_address.like(format!("%{}%", input_address)));
-        }
+            ////////// 房源
+            if let Some(ref input_address) = self.house_address {
+                result = result.filter(house::house_address.like(format!("%{}%", input_address)));
+            }
 
-        if let Some(ref input_house_type) = self.house_type {
-            result = result.filter(house::house_type.eq(input_house_type));
-        }
+            if let Some(ref input_house_type) = self.house_type {
+                result = result.filter(house::house_type.eq(input_house_type));
+            }
 
-        if let Some(ref input_area) = self.area {
-            result = result.filter(house::area.ge(input_area));
-        }
+            if let Some(ref input_area) = self.area {
+                result = result.filter(house::area.ge(input_area));
+            }
 
-        if let Some(ref input_bedrooms) = self.bedrooms {
-            result = result.filter(house::bedrooms.ge(input_bedrooms));
-        }
+            if let Some(ref input_bedrooms) = self.bedrooms {
+                result = result.filter(house::bedrooms.ge(input_bedrooms));
+            }
 
-        if let Some(ref input_living_rooms) = self.living_rooms {
-            result = result.filter(house::living_rooms.ge(input_living_rooms));
-        }
+            if let Some(ref input_living_rooms) = self.living_rooms {
+                result = result.filter(house::living_rooms.ge(input_living_rooms));
+            }
 
-        if let Some(ref input_bathrooms) = self.bathrooms {
-            result = result.filter(house::bathrooms.ge(input_bathrooms));
-        }
+            if let Some(ref input_bathrooms) = self.bathrooms {
+                result = result.filter(house::bathrooms.ge(input_bathrooms));
+            }
 
-        if let Some(ref input_orientation) = self.orientation {
-            result = result.filter(house::orientation.eq(input_orientation));
-        }
+            if let Some(ref input_orientation) = self.orientation {
+                result = result.filter(house::orientation.eq(input_orientation));
+            }
 
-        if let Some(ref input_decoration_status) = self.decoration_status {
-            result = result.filter(house::decoration_status.eq(input_decoration_status));
-        }
+            if let Some(ref input_decoration_status) = self.decoration_status {
+                result = result.filter(house::decoration_status.eq(input_decoration_status));
+            }
 
-        if let Some(ref input_status) = self.status {
-            result = result.filter(house::status.eq(input_status));
-        }
+            if let Some(ref input_status) = self.status {
+                result = result.filter(house::status.eq(input_status));
+            }
 
-        if let Some(ref input_house_description) = self.house_description {
-            result = result
-                .filter(house::house_description.like(format!("%{}%", input_house_description)));
-        }
+            if let Some(ref input_house_description) = self.house_description {
+                result = result.filter(
+                    house::house_description.like(format!("%{}%", input_house_description)),
+                );
+            }
 
-        if let Some(ref input_owner_name) = self.owner_name {
-            result = result.filter(house::owner_name.like(format!("%{}%", input_owner_name)));
-        }
+            if let Some(ref input_owner_name) = self.owner_name {
+                result = result.filter(house::owner_name.like(format!("%{}%", input_owner_name)));
+            }
 
-        if let Some(ref input_owner_phone) = self.owner_phone {
-            result = result.filter(house::owner_phone.like(format!("%{}%", input_owner_phone)));
-        }
+            if let Some(ref input_owner_phone) = self.owner_phone {
+                result = result.filter(house::owner_phone.like(format!("%{}%", input_owner_phone)));
+            }
 
-        if let Some(ref input_community_name) = self.community_name {
-            result = result.filter(residential::community_name.eq(input_community_name));
-        }
+            if let Some(ref input_community_name) = self.community_name {
+                result = result.filter(residential::community_name.eq(input_community_name));
+            }
 
-        if let Some(ref input_community_type) = self.community_type {
-            result = result.filter(residential::community_type.like(input_community_type));
-        }
+            if let Some(ref input_community_type) = self.community_type {
+                result = result.filter(residential::community_type.like(input_community_type));
+            }
 
-        if let Some(ref input_region) = self.region {
-            result = result.filter(residential::region.eq(input_region));
-        }
+            if let Some(ref input_region) = self.region {
+                result = result.filter(residential::region.eq(input_region));
+            }
+
+            result
+        };
 
         // 分页
         let page_index = self.page_index.unwrap_or(1);
         let page_size = self.page_size.unwrap_or(10);
 
-        result = result.offset((page_index - 1) * page_size).limit(page_size);
+        let total = get_query()
+            .count()
+            .get_result(conn)
+            .expect("Error loading rental house");
 
-        result
-            .load::<RentalHouseListed>(&mut conn)
-            .expect("Error loading houses")
+        let data = get_query()
+            .offset((page_index - 1) * page_size)
+            .limit(page_size)
+            .load::<RentalHouseListed>(conn)
+            .expect("Error loading houses");
+
+        TableData::new(data, total)
     }
 }
 
 // 已出租的房源
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct QueryRentalHouseSoldDto {}
+pub struct QueryRentalHouseSoldDto {
+    pub rent_pice: Option<BigDecimal>,
+    // 房源
+    pub house_address: Option<String>,
+    pub house_type: Option<String>,
+    pub area: Option<BigDecimal>,
+    pub bedrooms: Option<i32>,
+    pub living_rooms: Option<i32>,
+    pub bathrooms: Option<i32>,
+    pub orientation: Option<String>,
+    pub decoration_status: Option<String>,
+    pub status: Option<String>,
+    pub house_description: Option<String>,
+    pub owner_name: Option<String>,
+    pub owner_phone: Option<String>,
+
+    // 小区
+    pub community_name: Option<String>,
+    pub community_type: Option<String>,
+    pub region: Option<String>,
+    pub year_built: Option<YearRange>,
+
+    // 分页
+    pub page_index: Option<i64>,
+    pub page_size: Option<i64>,
+}
 
 impl QueryRentalHouseSoldDto {
-    pub fn list(&self, pool: DBPool) -> Vec<RentalHouseSold> {
+    pub fn list(&self, pool: DBPool) -> TableData<RentalHouseSold> {
         use crate::schema::house;
         use crate::schema::house_rental_sold::dsl::*;
         use crate::schema::residential;
         use diesel::JoinOnDsl;
 
-        let mut conn = pool.get().unwrap();
+        let conn = &mut pool.get().unwrap();
 
-        SelectDsl::select(
-            house_rental_sold
-                .inner_join(house::table.on(house::house_id.eq(house_id)))
-                .inner_join(residential::table.on(residential::community_name.eq(community_name))),
-            RentalHouseSold::as_select(),
-        )
-        .load::<RentalHouseSold>(&mut conn)
-        .expect("Error loading houses")
+        let get_query = || {
+            let mut result = SelectDsl::select(
+                house_rental_sold
+                    .inner_join(house::table.on(house::house_id.eq(house_id)))
+                    .inner_join(
+                        residential::table.on(residential::community_name.eq(community_name)),
+                    ),
+                RentalHouseSold::as_select(),
+            )
+            .into_boxed();
+
+            if let Some(ref _rent_pice) = self.rent_pice {
+                result = result.filter(rent_pice.ge(_rent_pice));
+            }
+
+            ////////// 房源
+            if let Some(ref input_address) = self.house_address {
+                result = result.filter(house::house_address.like(format!("%{}%", input_address)));
+            }
+
+            if let Some(ref input_house_type) = self.house_type {
+                result = result.filter(house::house_type.eq(input_house_type));
+            }
+
+            if let Some(ref input_area) = self.area {
+                result = result.filter(house::area.ge(input_area));
+            }
+
+            if let Some(ref input_bedrooms) = self.bedrooms {
+                result = result.filter(house::bedrooms.ge(input_bedrooms));
+            }
+
+            if let Some(ref input_living_rooms) = self.living_rooms {
+                result = result.filter(house::living_rooms.ge(input_living_rooms));
+            }
+
+            if let Some(ref input_bathrooms) = self.bathrooms {
+                result = result.filter(house::bathrooms.ge(input_bathrooms));
+            }
+
+            if let Some(ref input_orientation) = self.orientation {
+                result = result.filter(house::orientation.eq(input_orientation));
+            }
+
+            if let Some(ref input_decoration_status) = self.decoration_status {
+                result = result.filter(house::decoration_status.eq(input_decoration_status));
+            }
+
+            if let Some(ref input_status) = self.status {
+                result = result.filter(house::status.eq(input_status));
+            }
+
+            if let Some(ref input_house_description) = self.house_description {
+                result = result.filter(
+                    house::house_description.like(format!("%{}%", input_house_description)),
+                );
+            }
+
+            if let Some(ref input_owner_name) = self.owner_name {
+                result = result.filter(house::owner_name.like(format!("%{}%", input_owner_name)));
+            }
+
+            if let Some(ref input_owner_phone) = self.owner_phone {
+                result = result.filter(house::owner_phone.like(format!("%{}%", input_owner_phone)));
+            }
+
+            if let Some(ref input_community_name) = self.community_name {
+                result = result.filter(residential::community_name.eq(input_community_name));
+            }
+
+            if let Some(ref input_community_type) = self.community_type {
+                result = result.filter(residential::community_type.like(input_community_type));
+            }
+
+            if let Some(ref input_region) = self.region {
+                result = result.filter(residential::region.eq(input_region));
+            }
+
+            result
+        };
+
+        // 分页
+        let page_index = self.page_index.unwrap_or(1);
+        let page_size = self.page_size.unwrap_or(10);
+
+        let total = get_query()
+            .count()
+            .get_result(conn)
+            .expect("Error loading rental house");
+
+        let data = get_query()
+            .offset((page_index - 1) * page_size)
+            .limit(page_size)
+            .load::<RentalHouseSold>(conn)
+            .expect("Error loading houses");
+
+        TableData::new(data, total)
     }
 }
 
