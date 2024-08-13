@@ -3,7 +3,7 @@ use crate::{
         db::connection::DBPool,
         repositories::{
             entities::house_second_hand::{HouseSecondHandListed, HouseSecondHandSold},
-            object_value::query_value::{TableData, TimeRange, YearRange},
+            object_value::query_value::{TableData, YearRange},
         },
     },
     schema::{house_second_hand, house_second_hand_sold},
@@ -11,7 +11,7 @@ use crate::{
 use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
 use diesel::{
-    dsl::{count_star, exists, select},
+    dsl::{exists, select},
     prelude::AsChangeset,
     ExpressionMethods, QueryDsl, RunQueryDsl, TextExpressionMethods,
 };
@@ -89,14 +89,15 @@ pub struct QueryHouseSecondHandDto {
 
     // 房源
     pub house_address: Option<String>,
-    pub house_type: Option<String>,
+    pub floor: Option<i32>,
+    pub property: Option<String>,
+    pub house_age: Option<NaiveDateTime>,
     pub area: Option<BigDecimal>,
     pub bedrooms: Option<i32>,
     pub living_rooms: Option<i32>,
     pub bathrooms: Option<i32>,
     pub orientation: Option<String>,
     pub decoration_status: Option<String>,
-    pub status: Option<String>,
     pub house_description: Option<String>,
     pub owner_name: Option<String>,
     pub owner_phone: Option<String>,
@@ -146,8 +147,16 @@ impl QueryHouseSecondHandDto {
                 result = result.filter(house::house_address.like(format!("%{}%", input_address)));
             }
 
-            if let Some(ref input_house_type) = self.house_type {
-                result = result.filter(house::house_type.eq(input_house_type));
+            if let Some(ref input_floor) = self.floor {
+                result = result.filter(house::floor.ge(input_floor));
+            }
+
+            if let Some(ref input_house_age) = self.house_age {
+                result = result.filter(house::house_age.ge(input_house_age));
+            }
+
+            if let Some(ref input_property) = self.property {
+                result = result.filter(house::property.eq(input_property));
             }
 
             if let Some(ref input_area) = self.area {
@@ -172,10 +181,6 @@ impl QueryHouseSecondHandDto {
 
             if let Some(ref input_decoration_status) = self.decoration_status {
                 result = result.filter(house::decoration_status.eq(input_decoration_status));
-            }
-
-            if let Some(ref input_status) = self.status {
-                result = result.filter(house::status.eq(input_status));
             }
 
             if let Some(ref input_house_description) = self.house_description {
@@ -234,7 +239,9 @@ pub struct QueryHouseSecondHandSoldDto {
     pub sold_price: Option<BigDecimal>,
     // 房源
     pub house_address: Option<String>,
-    pub house_type: Option<String>,
+    pub floor: Option<i32>,
+    pub property: Option<String>,
+    pub house_age: Option<NaiveDateTime>,
     pub area: Option<BigDecimal>,
     pub bedrooms: Option<i32>,
     pub living_rooms: Option<i32>,
@@ -287,8 +294,16 @@ impl QueryHouseSecondHandSoldDto {
                 result = result.filter(house::house_address.like(format!("%{}%", input_address)));
             }
 
-            if let Some(ref input_house_type) = self.house_type {
-                result = result.filter(house::house_type.eq(input_house_type));
+            if let Some(ref input_floor) = self.floor {
+                result = result.filter(house::floor.ge(input_floor));
+            }
+
+            if let Some(ref input_house_age) = self.house_age {
+                result = result.filter(house::house_age.ge(input_house_age));
+            }
+
+            if let Some(ref input_property) = self.property {
+                result = result.filter(house::property.eq(input_property));
             }
 
             if let Some(ref input_area) = self.area {
@@ -313,10 +328,6 @@ impl QueryHouseSecondHandSoldDto {
 
             if let Some(ref input_decoration_status) = self.decoration_status {
                 result = result.filter(house::decoration_status.eq(input_decoration_status));
-            }
-
-            if let Some(ref input_status) = self.status {
-                result = result.filter(house::status.eq(input_status));
             }
 
             if let Some(ref input_house_description) = self.house_description {

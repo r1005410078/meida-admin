@@ -4,20 +4,20 @@ use log::info;
 use crate::{
     common::event_channel::EventChannel,
     domain::houses::events::{
-        house::{DeleteHouseEvent, NewHouseEvent, UpdateHouseEvent},
+        house::{DeleteHouseEvent, SaveHouseEvent},
         rental_house::{
             RentalHouseListedEvent, RentalHouseSoldEvent, RentalHouseUnListedEvent,
             SaveRentalHouseEvent,
         },
-        residential::{DeleteResidentialEvent, NewResidentialEvent, UpdateResidentialEvent},
+        residential::{DeleteResidentialEvent, SaveCommunityEvent},
         second_hand::{
             SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
             SecondHandUnlistedEvent,
         },
     },
     infrastructure::repositories::{
+        mysql_community_repository::MysqlResidentialRepository,
         mysql_house_repository::MysqlHouseRepository,
-        mysql_residential_repository::MysqlResidentialRepository,
     },
     presentation::{
         events::{
@@ -32,15 +32,8 @@ pub async fn run() -> std::io::Result<()> {
     let residential = web::Data::new(MysqlResidentialRepository::new());
 
     // 小区事件
-    let new_residential_sender = web::Data::new(
-        EventChannel::<NewResidentialEvent>::new(ResidentialEventHandler::new(
-            residential.clone().into_inner(),
-        ))
-        .sender,
-    );
-
-    let update_residential_sender = web::Data::new(
-        EventChannel::<UpdateResidentialEvent>::new(ResidentialEventHandler::new(
+    let save_residential_sender = web::Data::new(
+        EventChannel::<SaveCommunityEvent>::new(ResidentialEventHandler::new(
             residential.clone().into_inner(),
         ))
         .sender,
@@ -55,13 +48,8 @@ pub async fn run() -> std::io::Result<()> {
 
     // 房屋事件
     let house = web::Data::new(MysqlHouseRepository::new());
-    let new_house_sender: web::Data<tokio::sync::mpsc::Sender<NewHouseEvent>> = web::Data::new(
-        EventChannel::<NewHouseEvent>::new(HouseEventHandler::new(house.clone().into_inner()))
-            .sender,
-    );
-
     let update_house_sender = web::Data::new(
-        EventChannel::<UpdateHouseEvent>::new(HouseEventHandler::new(house.clone().into_inner()))
+        EventChannel::<SaveHouseEvent>::new(HouseEventHandler::new(house.clone().into_inner()))
             .sender,
     );
 
@@ -136,11 +124,9 @@ pub async fn run() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(residential.clone())
-            .app_data(new_residential_sender.clone())
-            .app_data(update_residential_sender.clone())
+            .app_data(save_residential_sender.clone())
             .app_data(delete_residential_sender.clone())
             .app_data(house.clone())
-            .app_data(new_house_sender.clone())
             .app_data(update_house_sender.clone())
             .app_data(delete_house_sender.clone())
             .app_data(second_hand_listed_sender.clone())

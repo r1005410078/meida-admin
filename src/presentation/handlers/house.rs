@@ -7,11 +7,10 @@ use crate::{
         command::{
             delete_house_command::DeleteHouseCommand,
             delete_house_command_handler::DeleteHouseCommandHandler,
-            new_house_command::NewHouseCommand, new_house_command_handler::NewHouseCommandHandler,
-            update_house_command::UpdateHouseCommand,
-            update_house_command_handler::UpdateHouseCommandHandler,
+            house_save_command::SaveHouseCommand,
+            house_save_command_handler::HouseSaveCommandHandler,
         },
-        events::house::{DeleteHouseEvent, NewHouseEvent, UpdateHouseEvent},
+        events::house::{DeleteHouseEvent, SaveHouseEvent},
     },
     infrastructure::repositories::{
         dao::house::QueryHouseDao, mysql_house_repository::MysqlHouseRepository,
@@ -19,27 +18,13 @@ use crate::{
     presentation::service::house::HouseService,
 };
 
-#[post("/create")]
-async fn create_house(
+#[post("/save")]
+async fn save_house(
     repo: web::Data<MysqlHouseRepository>,
-    sender: web::Data<Sender<NewHouseEvent>>,
-    command: web::Json<NewHouseCommand>,
+    sender: web::Data<Sender<SaveHouseEvent>>,
+    command: web::Json<SaveHouseCommand>,
 ) -> HttpResponse {
-    let house = NewHouseCommandHandler::new(repo.into_inner(), sender.into_inner());
-
-    match house.handle(command.into_inner()).await {
-        Ok(house_id) => HttpResponse::Ok().json(json!({ "house_id": house_id })),
-        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
-    }
-}
-
-#[post("/update")]
-async fn update_house(
-    repo: web::Data<MysqlHouseRepository>,
-    sender: web::Data<Sender<UpdateHouseEvent>>,
-    command: web::Json<UpdateHouseCommand>,
-) -> HttpResponse {
-    let house = UpdateHouseCommandHandler::new(repo.into_inner(), sender.into_inner());
+    let house = HouseSaveCommandHandler::new(repo.into_inner(), sender.into_inner());
 
     match house.handle(command.into_inner()).await {
         Ok(house_id) => HttpResponse::Ok().json(json!({ "house_id": house_id })),

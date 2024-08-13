@@ -1,11 +1,11 @@
 use diesel::prelude::Insertable;
 use serde::{Deserialize, Serialize};
 
-use crate::{domain::houses::events::residential::UpdateResidentialEvent, schema::residential};
+use crate::{domain::houses::events::residential::SaveCommunityEvent, schema::residential};
 
 #[derive(Debug, Clone, Deserialize, Serialize, Insertable)]
 #[diesel(table_name = residential)]
-pub struct UpdateResidentialCommand {
+pub struct CommunitySaveCommand {
     pub community_name: String,
     pub region: Option<String>,
     pub city: Option<String>,
@@ -17,8 +17,8 @@ pub struct UpdateResidentialCommand {
     pub property_management_company: Option<String>,
 }
 
-impl From<UpdateResidentialCommand> for UpdateResidentialEvent {
-    fn from(value: UpdateResidentialCommand) -> Self {
+impl From<CommunitySaveCommand> for SaveCommunityEvent {
+    fn from(value: CommunitySaveCommand) -> Self {
         Self {
             community_name: value.community_name,
             region: value.region.clone(),

@@ -4,10 +4,8 @@ use async_trait::async_trait;
 
 use crate::{
     common::event_channel::EventHandler,
-    domain::houses::events::residential::{
-        DeleteResidentialEvent, NewResidentialEvent, UpdateResidentialEvent,
-    },
-    infrastructure::repositories::mysql_residential_repository::MysqlResidentialRepository,
+    domain::houses::events::residential::{DeleteResidentialEvent, SaveCommunityEvent},
+    infrastructure::repositories::mysql_community_repository::MysqlResidentialRepository,
     presentation::service::residential::ResidentialService,
 };
 
@@ -24,17 +22,9 @@ impl ResidentialEventHandler {
 }
 
 #[async_trait]
-impl EventHandler<NewResidentialEvent> for ResidentialEventHandler {
-    async fn handle(&self, event: NewResidentialEvent) -> anyhow::Result<()> {
-        self.residential_service.create(event).await?;
-        Ok(())
-    }
-}
-
-#[async_trait]
-impl EventHandler<UpdateResidentialEvent> for ResidentialEventHandler {
-    async fn handle(&self, event: UpdateResidentialEvent) -> anyhow::Result<()> {
-        self.residential_service.update(event).await?;
+impl EventHandler<SaveCommunityEvent> for ResidentialEventHandler {
+    async fn handle(&self, event: SaveCommunityEvent) -> anyhow::Result<()> {
+        self.residential_service.save(event).await?;
 
         Ok(())
     }

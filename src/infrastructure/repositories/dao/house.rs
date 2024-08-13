@@ -1,73 +1,25 @@
 use crate::domain::houses::entities::house::HousePO;
-use crate::domain::houses::events::house::NewHouseEvent;
 use crate::infrastructure::db::connection::DBPool;
 use crate::infrastructure::repositories::object_value::query_value::TableData;
-use crate::schema::house;
 use bigdecimal::BigDecimal;
-use diesel::dsl::count_star;
-use diesel::prelude::Insertable;
+use chrono::NaiveDateTime;
+use diesel::RunQueryDsl;
 use diesel::{ExpressionMethods, QueryDsl, TextExpressionMethods};
-use diesel::{RunQueryDsl, Selectable};
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Serialize, Deserialize, Insertable, Selectable)]
-#[diesel(table_name = house)]
-pub struct NewHouseDto {
-    house_id: String,
-    community_name: String,
-    house_address: String,
-    house_type: String,
-    area: BigDecimal,
-    bedrooms: i32,
-    living_rooms: i32,
-    bathrooms: i32,
-    orientation: String,
-    decoration_status: String,
-    status: String,
-    house_description: String,
-    house_image: String,
-    owner_name: String,
-    owner_phone: String,
-    created_by: String,
-    updated_by: String,
-}
-
-impl From<NewHouseEvent> for NewHouseDto {
-    fn from(event: NewHouseEvent) -> Self {
-        NewHouseDto {
-            house_id: event.house_id,
-            community_name: event.community_name,
-            house_address: event.house_address,
-            house_type: event.house_type,
-            area: event.area,
-            bedrooms: event.bedrooms,
-            living_rooms: event.living_rooms,
-            bathrooms: event.bathrooms,
-            orientation: event.orientation.clone(),
-            decoration_status: event.decoration_status.clone(),
-            status: event.status.clone(),
-            house_description: event.house_description.clone(),
-            house_image: event.house_image.clone(),
-            owner_name: event.owner_name.clone(),
-            owner_phone: event.owner_phone.clone(),
-            created_by: event.created_by.clone(),
-            updated_by: event.updated_by.clone(),
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryHouseDao {
     pub community_name: Option<String>,
     pub house_address: Option<String>,
-    pub house_type: Option<String>,
+    pub floor: Option<i32>,
+    pub property: Option<String>,
+    pub house_age: Option<NaiveDateTime>,
     pub area: Option<BigDecimal>,
     pub bedrooms: Option<i32>,
     pub living_rooms: Option<i32>,
     pub bathrooms: Option<i32>,
     pub orientation: Option<String>,
     pub decoration_status: Option<String>,
-    pub status: Option<String>,
     pub house_description: Option<String>,
     pub owner_name: Option<String>,
     pub owner_phone: Option<String>,
@@ -90,11 +42,19 @@ impl QueryHouseDao {
             }
 
             if let Some(ref input_house_address) = self.house_address {
-                query = query.filter(house_address.eq(input_house_address));
+                query = query.filter(house_address.like(format!("%{}%", input_house_address)));
             }
 
-            if let Some(ref input_house_type) = self.house_type {
-                query = query.filter(house_type.eq(input_house_type));
+            if let Some(ref input_floor) = self.floor {
+                query = query.filter(floor.ge(input_floor));
+            }
+
+            if let Some(ref input_house_age) = self.house_age {
+                query = query.filter(house_age.ge(input_house_age));
+            }
+
+            if let Some(ref input_property) = self.property {
+                query = query.filter(property.eq(input_property));
             }
 
             if let Some(ref input_area) = self.area {
@@ -119,10 +79,6 @@ impl QueryHouseDao {
 
             if let Some(ref input_decoration_status) = self.decoration_status {
                 query = query.filter(decoration_status.eq(input_decoration_status));
-            }
-
-            if let Some(ref input_status) = self.status {
-                query = query.filter(status.eq(input_status));
             }
 
             if let Some(ref input_house_description) = self.house_description {

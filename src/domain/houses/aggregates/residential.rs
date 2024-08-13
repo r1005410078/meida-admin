@@ -4,11 +4,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     common::event_channel::EventSender,
     domain::houses::{
-        command::{
-            new_residential_command::NewResidentialCommand,
-            update_residential_command::UpdateResidentialCommand,
-        },
-        events::residential::{NewResidentialEvent, UpdateResidentialEvent},
+        command::community_save_command::CommunitySaveCommand,
+        events::residential::SaveCommunityEvent,
     },
     schema::residential_aggregate,
 };
@@ -23,26 +20,28 @@ pub struct ResidentialAggregate {
 }
 
 impl ResidentialAggregate {
-    pub async fn add_residential(
-        command: NewResidentialCommand,
-        sender: EventSender<NewResidentialEvent>,
+    pub async fn new(
+        command: CommunitySaveCommand,
+        sender: EventSender<SaveCommunityEvent>,
     ) -> anyhow::Result<Self> {
-        sender
-            .send(command.convert_event(command.community_name.clone()))
-            .await?;
+        let new_command = command.clone();
+        let community = Self {
+            community_name: new_command.community_name,
+            region: new_command.region.unwrap(),
+            city: new_command.city.unwrap_or("安庆".to_string()),
+            state: new_command.state.unwrap_or("安徽".to_string()),
+        };
 
-        Ok(Self {
-            community_name: command.community_name,
-            region: command.region,
-            city: command.city,
-            state: command.state.clone(),
-        })
+        sender.send(command.into()).await?;
+
+        Ok(community)
     }
 
-    pub async fn update_residential(
+    // 保存二手房
+    pub async fn save_residential(
         &mut self,
-        command: UpdateResidentialCommand,
-        sender: EventSender<UpdateResidentialEvent>,
+        command: CommunitySaveCommand,
+        sender: EventSender<SaveCommunityEvent>,
     ) -> anyhow::Result<()> {
         if let Some(ref region) = command.region {
             self.region = region.clone();

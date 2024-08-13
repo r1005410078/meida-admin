@@ -1,12 +1,9 @@
 use std::sync::Arc;
 
 use crate::{
-    domain::houses::{
-        entities::residential::Residential,
-        events::residential::{NewResidentialEvent, UpdateResidentialEvent},
-    },
+    domain::houses::{entities::residential::Residential, events::residential::SaveCommunityEvent},
     infrastructure::repositories::{
-        dao::community::QueryCommunityDao, mysql_residential_repository::MysqlResidentialRepository,
+        dao::community::QueryCommunityDao, mysql_community_repository::MysqlResidentialRepository,
     },
 };
 
@@ -19,12 +16,8 @@ impl ResidentialService {
         Self { repo }
     }
 
-    pub async fn create(&self, event: NewResidentialEvent) -> Result<(), diesel::result::Error> {
-        self.repo.create(event).await
-    }
-
-    pub async fn update(&self, event: UpdateResidentialEvent) -> Result<(), diesel::result::Error> {
-        self.repo.update(&event).await
+    pub async fn save(&self, event: SaveCommunityEvent) -> Result<(), diesel::result::Error> {
+        self.repo.save_community(&event).await
     }
 
     pub async fn delete_by_name(

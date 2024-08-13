@@ -8,18 +8,18 @@ diesel::table! {
         community_name -> Varchar,
         #[max_length = 255]
         house_address -> Varchar,
+        floor -> Integer,
         #[max_length = 50]
-        house_type -> Varchar,
+        property -> Varchar,
+        #[max_length = 255]
+        decoration_status -> Nullable<Varchar>,
+        house_age -> Nullable<Datetime>,
         area -> Decimal,
         bedrooms -> Integer,
         living_rooms -> Integer,
         bathrooms -> Integer,
         #[max_length = 20]
         orientation -> Nullable<Varchar>,
-        #[max_length = 255]
-        decoration_status -> Nullable<Varchar>,
-        #[max_length = 50]
-        status -> Nullable<Varchar>,
         house_description -> Nullable<Text>,
         #[max_length = 255]
         house_image -> Nullable<Varchar>,

@@ -25,6 +25,7 @@ pub struct HouseSecondHandListedPO {
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Selectable)]
 #[diesel(table_name = house_second_hand_sold)]
 pub struct HouseSecondHandSoldPO {
+    sold_id: i32,
     house_id: String,
     community_name: String,
     days_to_sell: i32,

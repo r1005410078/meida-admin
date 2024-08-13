@@ -3,14 +3,14 @@ use std::sync::Arc;
 use super::dao::house::QueryHouseDao;
 use super::object_value::query_value::TableData;
 use crate::domain::houses::entities::house::HousePO;
-use crate::domain::houses::events::house::{NewHouseEvent, UpdateHouseEvent};
+use crate::domain::houses::events::house::SaveHouseEvent;
 use crate::{
     domain::houses::{aggregates::house::HouseAggregate, repositories::house::HouseRepository},
     infrastructure::db::connection::{establish_connection, DBPool},
-    schema::house,
 };
 
-use diesel::{ExpressionMethods, SelectableHelper};
+use diesel::dsl::exists;
+use diesel::{select, ExpressionMethods, SelectableHelper};
 use diesel::{OptionalExtension, TextExpressionMethods};
 use diesel::{QueryDsl, RunQueryDsl};
 
@@ -31,23 +31,25 @@ impl MysqlHouseRepository {
 /// 房屋增删改
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 impl MysqlHouseRepository {
-    pub async fn insert_into(&self, input_house: NewHouseEvent) -> anyhow::Result<()> {
-        let mut conn = self.pool.get()?;
-
-        diesel::insert_into(house::table)
-            .values(input_house)
-            .execute(&mut conn)?;
-
-        Ok(())
-    }
-
-    pub async fn update(&self, input_house: UpdateHouseEvent) -> anyhow::Result<()> {
+    pub async fn save_house(&self, input_house: SaveHouseEvent) -> anyhow::Result<()> {
         use crate::schema::house::dsl::*;
-        let mut conn = self.pool.get()?;
-        diesel::update(house)
-            .filter(house_id.eq(input_house.house_id.clone()))
-            .set(input_house)
-            .execute(&mut conn)?;
+        let conn = &mut self.pool.get()?;
+
+        let existed: bool = select(exists(
+            house.filter(house_id.eq(input_house.house_id.clone())),
+        ))
+        .get_result(conn)?;
+
+        if !existed {
+            diesel::insert_into(house)
+                .values(input_house)
+                .execute(conn)?;
+        } else {
+            diesel::update(house)
+                .filter(house_id.eq(input_house.house_id.clone()))
+                .set(input_house)
+                .execute(conn)?;
+        }
 
         Ok(())
     }

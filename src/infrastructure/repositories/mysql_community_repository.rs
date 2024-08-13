@@ -1,15 +1,15 @@
 use crate::{
     domain::houses::{
-        aggregates::residential::ResidentialAggregate,
-        entities::residential::Residential,
-        events::residential::{NewResidentialEvent, UpdateResidentialEvent},
-        repositories::residential::ResidentialRepository,
+        aggregates::residential::ResidentialAggregate, entities::residential::Residential,
+        events::residential::SaveCommunityEvent, repositories::residential::ResidentialRepository,
     },
     infrastructure::db::connection::{establish_connection, DBPool},
-    schema::residential,
 };
 use async_trait::async_trait;
-use diesel::OptionalExtension;
+use diesel::{
+    dsl::{exists, select},
+    OptionalExtension,
+};
 use diesel::{query_dsl::QueryDsl, ExpressionMethods, RunQueryDsl};
 use std::sync::Arc;
 
@@ -27,28 +27,31 @@ impl MysqlResidentialRepository {
         }
     }
 
-    pub async fn create(
+    pub async fn save_community(
         &self,
-        input_residential: NewResidentialEvent,
-    ) -> Result<(), diesel::result::Error> {
-        let mut conn = self.pool.get().unwrap();
-        diesel::insert_into(residential::table)
-            .values(input_residential)
-            .execute(&mut conn)?;
-
-        Ok(())
-    }
-
-    pub async fn update(
-        &self,
-        input_residential: &UpdateResidentialEvent,
+        input_residential: &SaveCommunityEvent,
     ) -> Result<(), diesel::result::Error> {
         use crate::schema::residential::dsl::*;
-        let mut conn = self.pool.get().unwrap();
-        diesel::update(residential)
-            .filter(community_name.eq(input_residential.community_name.clone()))
-            .set(input_residential)
-            .execute(&mut conn)?;
+        let conn = &mut self.pool.get().unwrap();
+
+        let existed: bool = select(exists(
+            residential.filter(community_name.eq(&input_residential.community_name)),
+        ))
+        .get_result(conn)
+        .expect("Error checking if community exists");
+
+        println!("existed: {:?}", existed);
+        if !existed {
+            diesel::insert_into(residential)
+                .values(input_residential)
+                .execute(conn)?;
+        } else {
+            diesel::update(residential)
+                .filter(community_name.eq(input_residential.community_name.clone()))
+                .set(input_residential)
+                .execute(conn)?;
+        }
+
         Ok(())
     }
 

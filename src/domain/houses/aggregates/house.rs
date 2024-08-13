@@ -11,7 +11,7 @@ use crate::{
     domain::houses::{
         command::{
             delete_house_command::DeleteHouseCommand,
-            new_house_command::NewHouseCommand,
+            house_save_command::SaveHouseCommand,
             rental_house_command_save::SaveRentalHouseCommand,
             rental_house_listed_command::RentalHouseListedCommand,
             rental_house_sold_command::RentalHouseSoldCommand,
@@ -20,10 +20,9 @@ use crate::{
                 SecondHandListedCommand, SecondHandSoldCommand, SecondHandUnlistedCommand,
             },
             second_hand_save_command::SaveSecondHandCommand,
-            update_house_command::UpdateHouseCommand,
         },
         events::{
-            house::{DeleteHouseEvent, NewHouseEvent, UpdateHouseEvent},
+            house::{DeleteHouseEvent, SaveHouseEvent},
             rental_house::{
                 RentalHouseListedEvent, RentalHouseSoldEvent, RentalHouseUnListedEvent,
                 SaveRentalHouseEvent,
@@ -71,18 +70,18 @@ pub struct HouseAggregate {
 
 impl HouseAggregate {
     // 新建房屋
-    pub async fn add_house(command: NewHouseCommand, sender: EventSender<NewHouseEvent>) -> Self {
+    pub async fn new(command: SaveHouseCommand, sender: EventSender<SaveHouseEvent>) -> Self {
         let house_id: String = Uuid::new_v4().to_string();
 
         sender
-            .send(command.convert_event(house_id.clone()))
+            .send(command.clone().convert_event(house_id.clone()))
             .await
             .unwrap();
 
         Self {
             house_id,
             community_name: command.community_name.clone(),
-            house_address: command.house_address.clone(),
+            house_address: command.house_address.unwrap_or_default(),
             ..Default::default()
         }
     }
@@ -90,15 +89,18 @@ impl HouseAggregate {
     // 更新房屋
     pub async fn update_house(
         &mut self,
-        command: UpdateHouseCommand,
-        sender: EventSender<UpdateHouseEvent>,
+        command: SaveHouseCommand,
+        sender: EventSender<SaveHouseEvent>,
     ) {
         self.community_name = command.community_name.clone();
         if let Some(address) = command.house_address.clone() {
             self.house_address = address;
         }
 
-        sender.send(command.clone().into()).await.unwrap();
+        sender
+            .send(command.convert_event(self.house_id.clone()))
+            .await
+            .unwrap();
     }
 
     // 删除房屋
