@@ -9,6 +9,8 @@ pub struct SaveSecondHandEvent {
     pub community_name: String,
     pub pice: Option<BigDecimal>,
     pub low_pice: Option<BigDecimal>,
+    pub comment: String,
+    pub tags: String,
 }
 
 // 上架成功事件

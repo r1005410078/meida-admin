@@ -12,6 +12,8 @@ pub struct SaveRentalHouseEvent {
     pub community_name: String,
     pub rent_pice: BigDecimal,
     pub rent_low_pice: Option<BigDecimal>,
+    pub comment: String,
+    pub tags: String,
 }
 
 // 上架出租房

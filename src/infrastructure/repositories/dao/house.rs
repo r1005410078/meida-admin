@@ -1,9 +1,10 @@
 use crate::domain::houses::entities::house::HousePO;
 use crate::infrastructure::db::connection::DBPool;
-use crate::infrastructure::repositories::object_value::query_value::TableData;
-use bigdecimal::BigDecimal;
+use crate::infrastructure::repositories::object_value::query_value::{
+    BigDecimalRange, IntRange, TableData,
+};
 use chrono::NaiveDateTime;
-use diesel::RunQueryDsl;
+use diesel::{BoolExpressionMethods, RunQueryDsl};
 use diesel::{ExpressionMethods, QueryDsl, TextExpressionMethods};
 use serde::{Deserialize, Serialize};
 
@@ -11,11 +12,11 @@ use serde::{Deserialize, Serialize};
 pub struct QueryHouseDao {
     pub community_name: Option<String>,
     pub house_address: Option<String>,
-    pub floor: Option<i32>,
+    pub floor: Option<IntRange>,
     pub property: Option<String>,
     pub house_age: Option<NaiveDateTime>,
-    pub area: Option<BigDecimal>,
-    pub bedrooms: Option<i32>,
+    pub area: Option<BigDecimalRange>,
+    pub bedrooms: Option<IntRange>,
     pub living_rooms: Option<i32>,
     pub bathrooms: Option<i32>,
     pub orientation: Option<String>,
@@ -46,7 +47,25 @@ impl QueryHouseDao {
             }
 
             if let Some(ref input_floor) = self.floor {
-                query = query.filter(floor.ge(input_floor));
+                if let IntRange {
+                    start: Some(input_floor),
+                    end: None,
+                } = input_floor
+                {
+                    query = query.filter(floor.ge(input_floor));
+                } else if let IntRange {
+                    start: None,
+                    end: Some(input_floor),
+                } = input_floor
+                {
+                    query = query.filter(floor.le(input_floor));
+                } else if let IntRange {
+                    start: Some(start),
+                    end: Some(end),
+                } = input_floor
+                {
+                    query = query.filter(floor.ge(start).and(floor.le(end)));
+                }
             }
 
             if let Some(ref input_house_age) = self.house_age {
@@ -58,11 +77,47 @@ impl QueryHouseDao {
             }
 
             if let Some(ref input_area) = self.area {
-                query = query.filter(area.ge(input_area));
+                if let BigDecimalRange {
+                    start: Some(input_area),
+                    end: None,
+                } = input_area
+                {
+                    query = query.filter(area.ge(input_area));
+                } else if let BigDecimalRange {
+                    start: None,
+                    end: Some(input_area),
+                } = input_area
+                {
+                    query = query.filter(area.le(input_area));
+                } else if let BigDecimalRange {
+                    start: Some(start),
+                    end: Some(end),
+                } = input_area
+                {
+                    query = query.filter(area.ge(start).and(area.le(end)));
+                }
             }
 
             if let Some(ref input_bedrooms) = self.bedrooms {
-                query = query.filter(bedrooms.ge(input_bedrooms));
+                if let IntRange {
+                    start: Some(input_bedrooms),
+                    end: None,
+                } = input_bedrooms
+                {
+                    query = query.filter(bedrooms.ge(input_bedrooms));
+                } else if let IntRange {
+                    start: None,
+                    end: Some(input_bedrooms),
+                } = input_bedrooms
+                {
+                    query = query.filter(bedrooms.le(input_bedrooms));
+                } else if let IntRange {
+                    start: Some(start),
+                    end: Some(end),
+                } = input_bedrooms
+                {
+                    query = query.filter(bedrooms.ge(start).and(bedrooms.le(end)));
+                }
             }
 
             if let Some(ref input_living_rooms) = self.living_rooms {

@@ -69,6 +69,8 @@ diesel::table! {
         listed -> Tinyint,
         listed_time -> Nullable<Datetime>,
         unlisted_time -> Nullable<Datetime>,
+        comment -> Text,
+        tags -> Text,
         created_at -> Datetime,
         updated_at -> Datetime,
     }
@@ -100,6 +102,8 @@ diesel::table! {
         listed -> Tinyint,
         listed_time -> Nullable<Datetime>,
         unlisted_time -> Nullable<Datetime>,
+        comment -> Text,
+        tags -> Text,
         created_at -> Datetime,
         updated_at -> Datetime,
     }

@@ -1,3 +1,4 @@
+pub mod common;
 pub mod dao;
 pub mod entities;
 pub mod mysql_community_repository;

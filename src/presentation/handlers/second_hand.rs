@@ -57,10 +57,10 @@ async fn listed(
     }
 }
 
-#[get("/list_listed")]
+#[post("/list_listed")]
 async fn list_listed(
     repo: web::Data<MysqlHouseRepository>,
-    query: web::Query<QueryHouseSecondHandDto>,
+    query: web::Json<QueryHouseSecondHandDto>,
 ) -> HttpResponse {
     let list = SecondHandService::new(repo.into_inner())
         .list_listed(query.into_inner())

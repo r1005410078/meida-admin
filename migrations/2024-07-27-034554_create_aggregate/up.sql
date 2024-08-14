@@ -33,6 +33,8 @@ CREATE TABLE house_second_hand (
     `listed` TINYINT NOT NULL DEFAULT 1 COMMENT '是否上架 0 为下架 1 为上架',
     `listed_time` DATETIME DEFAULT NULL COMMENT '二手房上架时间',
     `unlisted_time` DATETIME DEFAULT NULL COMMENT '二手房下架时间',
+    `comment` TEXT NOT NULL COMMENT '评论',
+    `tags` TEXT NOT NULL COMMENT '标签',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 );
@@ -60,6 +62,8 @@ CREATE TABLE house_rental (
     `listed` TINYINT NOT NULL DEFAULT 1 COMMENT '是否上架 0 为下架 1 为上架',
     `listed_time` DATETIME DEFAULT NULL COMMENT '出租房上架时间',
     `unlisted_time` DATETIME DEFAULT NULL COMMENT '出租房下架时间',
+    `comment` TEXT NOT NULL COMMENT '评论',
+    `tags` TEXT NOT NULL COMMENT '标签',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 );

@@ -1,3 +1,4 @@
+use bigdecimal::BigDecimal;
 use serde::{Deserialize, Serialize};
 
 // 时间区间
@@ -12,6 +13,18 @@ pub struct TimeRange {
 pub struct YearRange {
     pub start: i16,
     pub end: i16,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BigDecimalRange {
+    pub start: Option<BigDecimal>,
+    pub end: Option<BigDecimal>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct IntRange {
+    pub start: Option<i32>,
+    pub end: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -131,6 +131,8 @@ impl HouseAggregate {
                 community_name: self.community_name.clone(),
                 pice: command.pice,
                 low_pice: command.low_pice,
+                comment: command.comment.unwrap_or_default(),
+                tags: command.tags.unwrap_or_default(),
             })
             .await
             .unwrap();
@@ -276,6 +278,8 @@ impl HouseAggregate {
                 community_name: self.community_name.clone(),
                 rent_pice: command.rent_pice,
                 rent_low_pice: command.rent_low_pice,
+                comment: command.comment.unwrap_or_default(),
+                tags: command.tags.unwrap_or_default(),
             })
             .await
             .unwrap();

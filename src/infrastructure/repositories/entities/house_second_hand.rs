@@ -18,6 +18,8 @@ pub struct HouseSecondHandListedPO {
     listed: i8,
     listed_time: Option<NaiveDateTime>,
     unlisted_time: Option<NaiveDateTime>,
+    comment: String,
+    tags: String,
     created_at: NaiveDateTime,
     updated_at: NaiveDateTime,
 }

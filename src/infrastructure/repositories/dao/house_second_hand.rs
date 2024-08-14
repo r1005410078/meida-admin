@@ -3,7 +3,7 @@ use crate::{
         db::connection::DBPool,
         repositories::{
             entities::house_second_hand::{HouseSecondHandListed, HouseSecondHandSold},
-            object_value::query_value::{TableData, YearRange},
+            object_value::query_value::{BigDecimalRange, IntRange, TableData, YearRange},
         },
     },
     schema::{house_second_hand, house_second_hand_sold},
@@ -13,7 +13,7 @@ use chrono::NaiveDateTime;
 use diesel::{
     dsl::{exists, select},
     prelude::AsChangeset,
-    ExpressionMethods, QueryDsl, RunQueryDsl, TextExpressionMethods,
+    BoolExpressionMethods, ExpressionMethods, QueryDsl, RunQueryDsl, TextExpressionMethods,
 };
 use diesel::{prelude::Insertable, query_dsl::methods::SelectDsl, SelectableHelper};
 use serde::{Deserialize, Serialize};
@@ -28,6 +28,8 @@ pub struct SaveHouseSecondHandListedDto {
     pub listed: Option<i8>,
     pub listed_time: Option<NaiveDateTime>,
     pub unlisted_time: Option<NaiveDateTime>,
+    pub comment: Option<String>,
+    pub tags: Option<String>,
 }
 
 impl SaveHouseSecondHandListedDto {
@@ -84,16 +86,18 @@ impl NewHouseSecondHandSoldDto {
 // 登记的二手房
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryHouseSecondHandDto {
-    listed: Option<i8>,
-    pice: Option<BigDecimal>,
+    pub listed: Option<i8>,
+    pub pice: Option<BigDecimalRange>,
+    pub tags: Option<String>,
+    pub comment: Option<String>,
 
     // 房源
     pub house_address: Option<String>,
-    pub floor: Option<i32>,
+    pub floor: Option<IntRange>,
     pub property: Option<String>,
     pub house_age: Option<NaiveDateTime>,
-    pub area: Option<BigDecimal>,
-    pub bedrooms: Option<i32>,
+    pub area: Option<BigDecimalRange>,
+    pub bedrooms: Option<IntRange>,
     pub living_rooms: Option<i32>,
     pub bathrooms: Option<i32>,
     pub orientation: Option<String>,
@@ -138,21 +142,56 @@ impl QueryHouseSecondHandDto {
             }
 
             if let Some(ref input_pice) = self.pice {
-                result = result.filter(pice.ge(input_pice));
+                if let BigDecimalRange {
+                    start: Some(input_pice),
+                    end: None,
+                } = input_pice
+                {
+                    result = result.filter(pice.ge(input_pice));
+                } else if let BigDecimalRange {
+                    start: None,
+                    end: Some(input_pice),
+                } = input_pice
+                {
+                    result = result.filter(pice.le(input_pice));
+                } else if let BigDecimalRange {
+                    start: Some(start),
+                    end: Some(end),
+                } = input_pice
+                {
+                    result = result.filter(pice.ge(start).and(pice.le(end)));
+                }
+            }
+
+            if let Some(ref input_comment) = self.comment {
+                result = result.filter(comment.like(format!("%{}%", input_comment)));
             }
 
             ////////// 房源
-
             if let Some(ref input_address) = self.house_address {
                 result = result.filter(house::house_address.like(format!("%{}%", input_address)));
             }
 
             if let Some(ref input_floor) = self.floor {
-                result = result.filter(house::floor.ge(input_floor));
-            }
-
-            if let Some(ref input_house_age) = self.house_age {
-                result = result.filter(house::house_age.ge(input_house_age));
+                if let IntRange {
+                    start: Some(input_floor),
+                    end: None,
+                } = input_floor
+                {
+                    result = result.filter(house::floor.ge(input_floor));
+                } else if let IntRange {
+                    start: None,
+                    end: Some(input_floor),
+                } = input_floor
+                {
+                    result = result.filter(house::floor.le(input_floor));
+                } else if let IntRange {
+                    start: Some(start),
+                    end: Some(end),
+                } = input_floor
+                {
+                    result = result.filter(house::floor.ge(start).and(house::floor.le(end)));
+                }
             }
 
             if let Some(ref input_property) = self.property {
@@ -160,11 +199,47 @@ impl QueryHouseSecondHandDto {
             }
 
             if let Some(ref input_area) = self.area {
-                result = result.filter(house::area.ge(input_area));
+                if let BigDecimalRange {
+                    start: Some(input_area),
+                    end: None,
+                } = input_area
+                {
+                    result = result.filter(house::area.ge(input_area));
+                } else if let BigDecimalRange {
+                    start: None,
+                    end: Some(input_area),
+                } = input_area
+                {
+                    result = result.filter(house::area.le(input_area));
+                } else if let BigDecimalRange {
+                    start: Some(start),
+                    end: Some(end),
+                } = input_area
+                {
+                    result = result.filter(house::area.ge(start).and(house::area.le(end)));
+                }
             }
 
             if let Some(ref input_bedrooms) = self.bedrooms {
-                result = result.filter(house::bedrooms.ge(input_bedrooms));
+                if let IntRange {
+                    start: Some(input_bedrooms),
+                    end: None,
+                } = input_bedrooms
+                {
+                    result = result.filter(house::bedrooms.ge(input_bedrooms));
+                } else if let IntRange {
+                    start: None,
+                    end: Some(input_bedrooms),
+                } = input_bedrooms
+                {
+                    result = result.filter(house::bedrooms.le(input_bedrooms));
+                } else if let IntRange {
+                    start: Some(start),
+                    end: Some(end),
+                } = input_bedrooms
+                {
+                    result = result.filter(house::bedrooms.ge(start).and(house::bedrooms.le(end)));
+                }
             }
 
             if let Some(ref input_living_rooms) = self.living_rooms {

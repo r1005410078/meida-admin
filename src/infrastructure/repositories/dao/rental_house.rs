@@ -1,16 +1,20 @@
 use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
 use diesel::{
-    dsl::exists,
+    dsl::{exists, sql},
     prelude::{AsChangeset, Insertable},
     query_dsl::methods::SelectDsl,
-    select, ExpressionMethods, QueryDsl, RunQueryDsl,
+    select, BoolExpressionMethods, ExpressionMethods, QueryDsl, RunQueryDsl,
 };
 use diesel::{SelectableHelper, TextExpressionMethods};
 use serde::{Deserialize, Serialize};
 
-use crate::infrastructure::repositories::entities::rental_house::RentalHouseSold;
-use crate::infrastructure::repositories::object_value::query_value::YearRange;
+use crate::infrastructure::repositories::object_value::query_value::{
+    BigDecimalRange, IntRange, YearRange,
+};
+use crate::infrastructure::repositories::{
+    common::define_my_sql_functions::find_in_set, entities::rental_house::RentalHouseSold,
+};
 use crate::schema::house_rental_sold;
 use crate::{
     domain::houses::events::rental_house::SaveRentalHouseEvent,
@@ -34,6 +38,8 @@ pub struct SaveRentalHouseDao {
     pub listed: i8,
     pub rent_pice: Option<BigDecimal>,
     pub rent_low_pice: Option<BigDecimal>,
+    pub comment: Option<String>,
+    pub tags: Option<String>,
 }
 
 impl SaveRentalHouseDao {
@@ -69,6 +75,8 @@ impl From<SaveRentalHouseEvent> for SaveRentalHouseDao {
             community_name: Some(event.community_name),
             rent_pice: Some(event.rent_pice),
             rent_low_pice: event.rent_low_pice,
+            comment: Some(event.comment),
+            tags: Some(event.tags),
         }
     }
 }
@@ -81,6 +89,8 @@ impl From<RentalHouseListedEvent> for SaveRentalHouseDao {
             community_name: None,
             rent_pice: None,
             rent_low_pice: None,
+            comment: None,
+            tags: None,
         }
     }
 }
@@ -93,6 +103,8 @@ impl From<RentalHouseUnListedEvent> for SaveRentalHouseDao {
             community_name: None,
             rent_pice: None,
             rent_low_pice: None,
+            comment: None,
+            tags: None,
         }
     }
 }
@@ -100,16 +112,18 @@ impl From<RentalHouseUnListedEvent> for SaveRentalHouseDao {
 // 出租的房源
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryRentalHouseListedDto {
-    listed: Option<i8>,
-    rent_pice: Option<BigDecimal>,
+    pub listed: Option<i8>,
+    pub rent_pice: Option<BigDecimalRange>,
+    pub tags: Option<String>,
+    pub comment: Option<String>,
 
     // 房源
     pub house_address: Option<String>,
-    pub floor: Option<i32>,
+    pub floor: Option<IntRange>,
     pub property: Option<String>,
     pub house_age: Option<NaiveDateTime>,
-    pub area: Option<BigDecimal>,
-    pub bedrooms: Option<i32>,
+    pub area: Option<BigDecimalRange>,
+    pub bedrooms: Option<IntRange>,
     pub living_rooms: Option<i32>,
     pub bathrooms: Option<i32>,
     pub orientation: Option<String>,
@@ -154,8 +168,30 @@ impl QueryRentalHouseListedDto {
                 result = result.filter(listed.eq(_listed));
             }
 
-            if let Some(ref _rent_pice) = self.rent_pice {
-                result = result.filter(rent_pice.ge(_rent_pice));
+            if let Some(ref input_rent_pice) = self.rent_pice {
+                if let BigDecimalRange {
+                    start: Some(input_rent_pice),
+                    end: None,
+                } = input_rent_pice
+                {
+                    result = result.filter(rent_pice.ge(input_rent_pice));
+                } else if let BigDecimalRange {
+                    start: None,
+                    end: Some(input_rent_pice),
+                } = input_rent_pice
+                {
+                    result = result.filter(rent_pice.le(input_rent_pice));
+                } else if let BigDecimalRange {
+                    start: Some(start),
+                    end: Some(end),
+                } = input_rent_pice
+                {
+                    result = result.filter(rent_pice.ge(start).and(rent_pice.le(end)));
+                }
+            }
+
+            if let Some(ref input_comment) = self.comment {
+                result = result.filter(comment.like(format!("%{}%", input_comment)));
             }
 
             ////////// 房源
@@ -164,7 +200,25 @@ impl QueryRentalHouseListedDto {
             }
 
             if let Some(ref input_floor) = self.floor {
-                result = result.filter(house::floor.ge(input_floor));
+                if let IntRange {
+                    start: Some(input_floor),
+                    end: None,
+                } = input_floor
+                {
+                    result = result.filter(house::floor.ge(input_floor));
+                } else if let IntRange {
+                    start: None,
+                    end: Some(input_floor),
+                } = input_floor
+                {
+                    result = result.filter(house::floor.le(input_floor));
+                } else if let IntRange {
+                    start: Some(start),
+                    end: Some(end),
+                } = input_floor
+                {
+                    result = result.filter(house::floor.ge(start).and(house::floor.le(end)));
+                }
             }
 
             if let Some(ref input_house_age) = self.house_age {
@@ -176,11 +230,47 @@ impl QueryRentalHouseListedDto {
             }
 
             if let Some(ref input_area) = self.area {
-                result = result.filter(house::area.ge(input_area));
+                if let BigDecimalRange {
+                    start: Some(input_area),
+                    end: None,
+                } = input_area
+                {
+                    result = result.filter(house::area.ge(input_area));
+                } else if let BigDecimalRange {
+                    start: None,
+                    end: Some(input_area),
+                } = input_area
+                {
+                    result = result.filter(house::area.le(input_area));
+                } else if let BigDecimalRange {
+                    start: Some(start),
+                    end: Some(end),
+                } = input_area
+                {
+                    result = result.filter(house::area.ge(start).and(house::area.le(end)));
+                }
             }
 
             if let Some(ref input_bedrooms) = self.bedrooms {
-                result = result.filter(house::bedrooms.ge(input_bedrooms));
+                if let IntRange {
+                    start: Some(input_bedrooms),
+                    end: None,
+                } = input_bedrooms
+                {
+                    result = result.filter(house::bedrooms.ge(input_bedrooms));
+                } else if let IntRange {
+                    start: None,
+                    end: Some(input_bedrooms),
+                } = input_bedrooms
+                {
+                    result = result.filter(house::bedrooms.le(input_bedrooms));
+                } else if let IntRange {
+                    start: Some(start),
+                    end: Some(end),
+                } = input_bedrooms
+                {
+                    result = result.filter(house::bedrooms.ge(start).and(house::bedrooms.le(end)));
+                }
             }
 
             if let Some(ref input_living_rooms) = self.living_rooms {

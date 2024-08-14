@@ -28,6 +28,8 @@ impl MysqlHouseRepository {
             listed_time: None,
             unlisted_time: None,
             listed: None,
+            comment: Some(event.comment),
+            tags: Some(event.tags),
             pice: event.pice,
             low_pice: event.low_pice,
         };
@@ -47,6 +49,8 @@ impl MysqlHouseRepository {
             listed: Some(event.listed),
             pice: None,
             low_pice: None,
+            comment: None,
+            tags: None,
         };
 
         dto.save(self.pool.clone()).await
@@ -65,6 +69,8 @@ impl MysqlHouseRepository {
             listed_time: None,
             pice: None,
             low_pice: None,
+            comment: None,
+            tags: None,
         };
 
         dto.save(self.pool.clone()).await

@@ -7,4 +7,6 @@ pub struct SaveSecondHandCommand {
     pub house_id: String,
     pub pice: Option<BigDecimal>,
     pub low_pice: Option<BigDecimal>,
+    pub comment: Option<String>,
+    pub tags: Option<String>,
 }

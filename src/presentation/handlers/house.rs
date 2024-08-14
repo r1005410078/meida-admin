@@ -46,10 +46,10 @@ async fn delete_house(
     }
 }
 
-#[get("/list")]
+#[post("/list")]
 async fn list(
     repo: web::Data<MysqlHouseRepository>,
-    query: web::Query<QueryHouseDao>,
+    query: web::Json<QueryHouseDao>,
 ) -> HttpResponse {
     let list = HouseService::new(repo.into_inner())
         .list(query.into_inner())
