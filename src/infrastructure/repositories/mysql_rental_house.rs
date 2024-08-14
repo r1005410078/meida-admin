@@ -21,8 +21,8 @@ impl MysqlHouseRepository {
         &self,
         event: SaveRentalHouseEvent,
     ) -> Result<(), diesel::result::Error> {
-        let dot: SaveRentalHouseDao = event.into();
-        dot.save(self.pool.clone())
+        let dto: SaveRentalHouseDao = event.into();
+        dto.save(self.pool.clone())
     }
 
     pub async fn delete_rental_house_by_house_id(

@@ -5,7 +5,7 @@ use crate::{
     },
 };
 
-use super::rental_house_command_save::SaveRentalHouseCommand;
+use super::rental_house_save_command::SaveRentalHouseCommand;
 
 pub struct RentalHouseCommandSaveHandler<R: HouseRepository> {
     repo: R,

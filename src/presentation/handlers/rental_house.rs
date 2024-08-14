@@ -4,10 +4,10 @@ use tokio::sync::mpsc::Sender;
 use crate::{
     domain::houses::{
         command::{
-            rental_house_command_save::SaveRentalHouseCommand,
-            rental_house_command_save_handler::RentalHouseCommandSaveHandler,
             rental_house_listed_command::RentalHouseListedCommand,
             rental_house_listed_command_handler::RentalHouseListedCommandHandler,
+            rental_house_save_command::SaveRentalHouseCommand,
+            rental_house_save_command_handler::RentalHouseCommandSaveHandler,
             rental_house_sold_command::RentalHouseSoldCommand,
             rental_house_sold_command_handler::RentalHouseSoldCommandHandler,
             rental_house_unlisted_command::RentalHouseUnListedCommand,

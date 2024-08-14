@@ -47,8 +47,6 @@ impl SaveRentalHouseDao {
         .get_result(conn)
         .expect("Error loading houses");
 
-        println!("sean_exists: {:?}", self.rent_low_pice);
-
         if sean_exists {
             diesel::update(house_rental.filter(house_id.eq(self.house_id.clone())))
                 .set(self)
@@ -67,7 +65,7 @@ impl From<SaveRentalHouseEvent> for SaveRentalHouseDao {
     fn from(event: SaveRentalHouseEvent) -> Self {
         Self {
             house_id: event.house_id,
-            listed: 0,
+            listed: 1,
             community_name: Some(event.community_name),
             rent_pice: Some(event.rent_pice),
             rent_low_pice: event.rent_low_pice,
