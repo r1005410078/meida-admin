@@ -160,6 +160,26 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    users (id) {
+        #[max_length = 36]
+        id -> Char,
+        #[max_length = 50]
+        username -> Varchar,
+        #[max_length = 255]
+        password_hash -> Varchar,
+        #[max_length = 100]
+        phone -> Varchar,
+        #[max_length = 255]
+        avatar -> Nullable<Varchar>,
+        is_active -> Nullable<Bool>,
+        #[max_length = 20]
+        role -> Nullable<Varchar>,
+        created_at -> Nullable<Timestamp>,
+        updated_at -> Nullable<Timestamp>,
+    }
+}
+
 diesel::allow_tables_to_appear_in_same_query!(
     house,
     house_aggregate,
@@ -169,4 +189,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     house_second_hand_sold,
     residential,
     residential_aggregate,
+    users,
 );

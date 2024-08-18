@@ -25,3 +25,10 @@ qiniu-sdk = { version = "0.2.4", features = ["upload-token", "credential", "down
 qiniu-credential = "0.2.4"
 qiniu-upload-token = "0.2.4"
 url-escape = "0.1.1"
+mysqlclient-sys = { version =  "0.4.0"  }
+actix-cors = "0.7.0"
+jsonwebtoken = "9"
+time = "0.3.17"
+
+[[example]]
+name = "jwt"

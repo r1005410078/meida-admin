@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use log::info;
 
@@ -17,7 +18,7 @@ use crate::{
     },
     infrastructure::repositories::{
         mysql_community_repository::MysqlResidentialRepository,
-        mysql_house_repository::MysqlHouseRepository,
+        mysql_house_repository::MysqlHouseRepository, mysql_users_repository::MysqlUsersRepository,
     },
     presentation::{
         events::{
@@ -119,10 +120,21 @@ pub async fn run() -> std::io::Result<()> {
         .sender,
     );
 
+    // user mysql
+    let users = web::Data::new(MysqlUsersRepository::new());
+
     info!("Web server Starting...");
 
     HttpServer::new(move || {
         App::new()
+            .wrap(
+                Cors::default()
+                    .allow_any_origin()
+                    .allow_any_header()
+                    .allow_any_method()
+                    .supports_credentials(),
+            )
+            .app_data(users.clone())
             .app_data(residential.clone())
             .app_data(save_residential_sender.clone())
             .app_data(delete_residential_sender.clone())
@@ -143,8 +155,9 @@ pub async fn run() -> std::io::Result<()> {
             .configure(routes::qiliu::routes)
             .configure(routes::second_hand::routes)
             .configure(routes::rental_house::routes)
+            .configure(routes::user::routes)
     })
-    .bind("127.0.0.1:8000")?
+    .bind("0.0.0.0:8000")?
     .run()
     .await
 }
