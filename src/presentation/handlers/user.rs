@@ -3,7 +3,7 @@ use actix_web::{post, web, HttpResponse};
 use crate::{
     infrastructure::repositories::mysql_users_repository::MysqlUsersRepository,
     presentation::{
-        dto::users::{LoginDto, SaveUsersDto},
+        dto::users::{LoginDto, QueryUsersDto, SaveUsersDto},
         service::users::UsersService,
     },
 };
@@ -32,6 +32,25 @@ async fn register(
 
     match service.save(&command.convert_to_dao()).await {
         Ok(token) => HttpResponse::Ok().json(token),
+        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+    }
+}
+
+#[post("/list")]
+async fn list(
+    repo: web::Data<MysqlUsersRepository>,
+    query: web::Json<QueryUsersDto>,
+) -> HttpResponse {
+    let service = UsersService::new(repo.into_inner());
+    let data = service.list(&query.convert_to_dao()).await;
+    HttpResponse::Ok().json(data)
+}
+
+#[post("/delete/{user_id}")]
+async fn delete(repo: web::Data<MysqlUsersRepository>, command: web::Path<String>) -> HttpResponse {
+    let service = UsersService::new(repo.into_inner());
+    match service.delete_user(&command.into_inner()).await {
+        Ok(_) => HttpResponse::Ok().finish(),
         Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
     }
 }

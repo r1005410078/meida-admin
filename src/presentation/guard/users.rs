@@ -10,7 +10,7 @@ impl Guard for UserGuard {
         if let Some(token) = ctx.head().headers().get("token") {
             users.validate(token.to_str().unwrap_or_default()).is_ok()
         } else {
-            true
+            false
         }
     }
 }
