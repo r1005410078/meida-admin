@@ -1,7 +1,7 @@
 use crate::{
     infrastructure::{
         db::connection::DBPool,
-        repositories::{entities::users::UsersPO, object_value::query_value::TableData},
+        repositories::{entities::users::UsersVO, object_value::query_value::TableData},
     },
     schema::users,
 };
@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 pub struct SaveUsersDao<'a> {
     pub id: Option<&'a str>,
     pub username: Option<&'a str>,
-    pub password_hash: Option<&'a str>,
+    pub password_hash: Option<String>,
     pub phone: Option<&'a str>,
     pub avatar: Option<&'a str>,
     pub is_active: Option<bool>,
@@ -47,20 +47,6 @@ pub struct LoginDao<'a> {
     pub password_hash: &'a str,
 }
 
-impl LoginDao<'_> {
-    pub fn user_exists(&self, pool: DBPool) -> Option<UsersPO> {
-        use crate::schema::users::dsl::*;
-        let conn = &mut pool.get().unwrap();
-        users
-            .filter(username.eq(self.username))
-            .filter(password_hash.eq(self.password_hash))
-            .select(UsersPO::as_select())
-            .first::<UsersPO>(conn)
-            .optional()
-            .expect("Error loading users")
-    }
-}
-
 pub struct QueryUsersDao<'a> {
     pub username: Option<&'a str>,
     pub phone: Option<&'a str>,
@@ -71,7 +57,7 @@ pub struct QueryUsersDao<'a> {
 }
 
 impl QueryUsersDao<'_> {
-    pub fn list(&self, pool: DBPool) -> TableData<UsersPO> {
+    pub fn list(&self, pool: DBPool) -> TableData<UsersVO> {
         use crate::schema::users::dsl::*;
 
         let conn = &mut pool.get().unwrap();
@@ -110,7 +96,10 @@ impl QueryUsersDao<'_> {
             .offset((page_index - 1) * page_size)
             .limit(page_size);
 
-        let data = result.load::<UsersPO>(conn).expect("Error loading houses");
+        let data = result
+            .select(UsersVO::as_select())
+            .load::<UsersVO>(conn)
+            .expect("Error loading houses");
 
         TableData::new(data, total)
     }

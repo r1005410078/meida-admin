@@ -17,3 +17,16 @@ pub struct UsersPO {
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable, Selectable)]
+#[diesel(table_name = users)]
+pub struct UsersVO {
+    pub id: String,
+    pub username: String,
+    pub phone: String,
+    pub avatar: Option<String>,
+    pub is_active: Option<bool>,
+    pub role: Option<String>,
+    pub created_at: Option<NaiveDateTime>,
+    pub updated_at: Option<NaiveDateTime>,
+}

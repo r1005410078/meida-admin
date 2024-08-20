@@ -6,11 +6,11 @@ use time::{Duration, OffsetDateTime};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    user_id: String,
-    username: String,
-    rule: String,
-    exp: i64,
-    iat: i64,
+    pub user_id: String,
+    pub username: String,
+    pub rule: String,
+    pub exp: i64,
+    pub iat: i64,
 }
 
 const KEY: &[u8] = b"2778205";

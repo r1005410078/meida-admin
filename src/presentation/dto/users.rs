@@ -33,7 +33,7 @@ impl SaveUsersDto {
         SaveUsersDao {
             id: self.id.as_deref(),
             username: self.username.as_deref(),
-            password_hash: self.password.as_deref(),
+            password_hash: self.password.clone(),
             phone: self.phone.as_deref(),
             avatar: self.avatar.as_deref(),
             is_active: self.is_active,
