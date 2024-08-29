@@ -1,5 +1,5 @@
 -- Your SQL goes here
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     `id` CHAR(36) PRIMARY KEY DEFAULT (UUID()), -- 使用 UUID 作为主键
     `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
     `password_hash` VARCHAR(255) NOT NULL COMMENT '密码哈希',

@@ -10,8 +10,9 @@ use crate::{
 };
 
 use diesel::dsl::exists;
+use diesel::OptionalExtension;
+use diesel::TextExpressionMethods;
 use diesel::{select, ExpressionMethods, SelectableHelper};
-use diesel::{OptionalExtension, TextExpressionMethods};
 use diesel::{QueryDsl, RunQueryDsl};
 
 pub struct MysqlHouseRepository {
@@ -65,6 +66,7 @@ impl MysqlHouseRepository {
         use crate::schema::house::dsl::*;
         let mut conn = self.pool.get().unwrap();
         house
+            .select(HousePO::as_select())
             .filter(house_id.eq(input_house_id))
             .order_by(updated_at.desc())
             .first::<HousePO>(&mut conn)
@@ -83,6 +85,7 @@ impl MysqlHouseRepository {
         let like_name = format!("%{}%", input_owner_name);
 
         house
+            .select(HousePO::as_select())
             .filter(owner_name.like(like_name))
             .load::<HousePO>(&mut conn)
             .expect("Error loading houses")

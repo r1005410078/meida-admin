@@ -32,6 +32,12 @@ impl MysqlHouseRepository {
             tags: Some(event.tags),
             pice: event.pice,
             low_pice: event.low_pice,
+            down_payment: event.down_payment, // '首付' 记录首付金额，精度为两位小数
+            viewing_method: event.viewing_method, // '看房方式' 记录看房的方式（如预约、随时可看等）
+            payment_method: event.payment_method, // '付款方式' 记录付款方式（如一次性付款、按揭贷款等）
+            taxes_and_fees: event.taxes_and_fees, // '房源税费' 记录房源涉及的税费，精度为两位小数
+            full_payment_required: event.full_payment_required, //  '是否全款'  标识是否必须全款，0 为否，1 为是
+            urgent_sale: event.urgent_sale, // '是否急切' 标识是否急切出售，0 为否，1 为是
         };
         dto.save(self.pool.clone()).await
     }
@@ -51,6 +57,12 @@ impl MysqlHouseRepository {
             low_pice: None,
             comment: None,
             tags: None,
+            down_payment: None,          // '首付' 记录首付金额，精度为两位小数
+            viewing_method: None,        // '看房方式' 记录看房的方式（如预约、随时可看等）
+            payment_method: None,        // '付款方式' 记录付款方式（如一次性付款、按揭贷款等）
+            taxes_and_fees: None,        // '房源税费' 记录房源涉及的税费，精度为两位小数
+            full_payment_required: None, //  '是否全款'  标识是否必须全款，0 为否，1 为是
+            urgent_sale: None,           // '是否急切' 标识是否急切出售，0 为否，1 为是
         };
 
         dto.save(self.pool.clone()).await
@@ -71,6 +83,12 @@ impl MysqlHouseRepository {
             low_pice: None,
             comment: None,
             tags: None,
+            down_payment: None,
+            viewing_method: None,
+            payment_method: None,
+            taxes_and_fees: None,
+            full_payment_required: None,
+            urgent_sale: None,
         };
 
         dto.save(self.pool.clone()).await

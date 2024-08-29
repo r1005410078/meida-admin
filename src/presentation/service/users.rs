@@ -33,7 +33,7 @@ impl UsersService {
     }
 
     pub async fn login<'a>(&self, input_user: &LoginDao<'a>) -> anyhow::Result<String> {
-        if let Some(user) = self.repo.find_by_username(&input_user.username).await {
+        if let Some(user) = self.repo.find_by_username(&input_user.username).await? {
             if Argon::verify_password(input_user.password_hash, &user.password_hash) {
                 if Some(true) == user.is_active {
                     let token = Claims::new(

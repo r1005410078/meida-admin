@@ -1,5 +1,5 @@
 -- Your SQL goes here
-CREATE TABLE residential (
+CREATE TABLE IF NOT EXISTS residential (
     community_name VARCHAR(255) NOT NULL PRIMARY KEY  COMMENT '唯一名称',
     region VARCHAR(255) NOT NULL COMMENT '唯一地址',
     city VARCHAR(100) NOT NULL DEFAULT '安庆市' COMMENT '默认安庆市', 

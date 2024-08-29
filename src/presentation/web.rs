@@ -1,6 +1,11 @@
-use actix_cors::Cors;
-use actix_web::{middleware::Logger, web, App, HttpServer};
+use std::env;
+use std::path::{Path, PathBuf};
+
+use actix_files::NamedFile;
+use actix_web::get;
+use actix_web::{middleware::Logger, web, App, Error, HttpRequest, HttpServer};
 use log::info;
+use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
 use crate::{
     common::event_channel::EventChannel,
@@ -28,6 +33,23 @@ use crate::{
         routes,
     },
 };
+
+#[get("/{filename:.*}")]
+async fn index(req: HttpRequest) -> Result<NamedFile, Error> {
+    let mut path: PathBuf = req.match_info().query("filename").parse().unwrap();
+
+    // 如果只有目录，默认返回当前目录下的 index.html 文件
+    if path.extension() == None {
+        path.push("index.html");
+    }
+
+    let web_root_dir = env::var("WEB_ROOT_DIR").unwrap_or("/opt/www/meida/dist".to_string());
+    let static_path = Path::new(&web_root_dir);
+
+    let file = NamedFile::open(static_path.join(path))?;
+
+    Ok(file.use_last_modified(true).use_etag(true))
+}
 
 pub async fn run() -> std::io::Result<()> {
     let residential = web::Data::new(MysqlResidentialRepository::new());
@@ -125,15 +147,22 @@ pub async fn run() -> std::io::Result<()> {
 
     info!("Web server Starting...");
 
+    let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+    let cert_dir_path =
+        env::var("CERTIFICATE_DIR").unwrap_or("/opt/www/meida/certificate".to_string());
+    let cert_dir = Path::new(&cert_dir_path);
+
+    println!("cert_dir: {:?}", cert_dir);
+
+    builder
+        .set_private_key_file(cert_dir.join("rongts.tech.key"), SslFiletype::PEM)
+        .unwrap();
+    builder
+        .set_certificate_chain_file(cert_dir.join("rongts.tech.pem"))
+        .unwrap();
+
     HttpServer::new(move || {
         App::new()
-            .wrap(
-                Cors::default()
-                    .allow_any_origin()
-                    .allow_any_header()
-                    .allow_any_method()
-                    .supports_credentials(),
-            )
             .app_data(users.clone())
             .app_data(residential.clone())
             .app_data(save_residential_sender.clone())
@@ -156,8 +185,10 @@ pub async fn run() -> std::io::Result<()> {
             .configure(routes::second_hand::routes)
             .configure(routes::rental_house::routes)
             .configure(routes::user::routes)
+            .service(index)
     })
-    .bind("0.0.0.0:8000")?
+    .bind_openssl("0.0.0.0:443", builder)?
+    .bind("0.0.0.0:80")?
     .run()
     .await
 }

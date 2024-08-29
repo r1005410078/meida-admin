@@ -13,7 +13,7 @@ use crate::infrastructure::repositories::object_value::query_value::{
     BigDecimalRange, IntRange, YearRange,
 };
 use crate::infrastructure::repositories::{
-    common::define_my_sql_functions::find_in_set, entities::rental_house::RentalHouseSold,
+    entities::rental_house::RentalHouseSold,
 };
 use crate::schema::house_rental_sold;
 use crate::{
@@ -221,10 +221,6 @@ impl QueryRentalHouseListedDto {
                 }
             }
 
-            if let Some(ref input_house_age) = self.house_age {
-                result = result.filter(house::house_age.ge(input_house_age));
-            }
-
             if let Some(ref input_property) = self.property {
                 result = result.filter(house::property.eq(input_property));
             }
@@ -398,10 +394,6 @@ impl QueryRentalHouseSoldDto {
 
             if let Some(ref input_floor) = self.floor {
                 result = result.filter(house::floor.ge(input_floor));
-            }
-
-            if let Some(ref input_house_age) = self.house_age {
-                result = result.filter(house::house_age.ge(input_house_age));
             }
 
             if let Some(ref input_property) = self.property {

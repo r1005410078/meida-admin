@@ -26,14 +26,19 @@ impl MysqlUsersRepository {
         dto.save(self.pool.clone())
     }
 
-    pub async fn find_by_username<'a>(&self, input_username: &str) -> Option<UsersPO> {
+    pub async fn find_by_username<'a>(
+        &self,
+        input_username: &str,
+    ) -> anyhow::Result<Option<UsersPO>> {
         use crate::schema::users::dsl::*;
         let conn = &mut self.pool.get().unwrap();
-        users
+
+        println!("login: {:?}", input_username);
+
+        Ok(users
             .filter(username.eq(input_username))
             .first::<UsersPO>(conn)
-            .optional()
-            .expect("Error loading users")
+            .optional()?)
     }
 
     pub async fn list<'a>(&self, query: &QueryUsersDao<'a>) -> TableData<UsersVO> {

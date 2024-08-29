@@ -133,6 +133,12 @@ impl HouseAggregate {
                 low_pice: command.low_pice,
                 comment: command.comment.unwrap_or_default(),
                 tags: command.tags.unwrap_or_default(),
+                down_payment: command.down_payment, // '首付' 记录首付金额，精度为两位小数
+                viewing_method: command.viewing_method, // '看房方式' 记录看房的方式（如预约、随时可看等）
+                payment_method: command.payment_method, // '付款方式' 记录付款方式（如一次性付款、按揭贷款等）
+                taxes_and_fees: command.taxes_and_fees, // '房源税费' 记录房源涉及的税费，精度为两位小数
+                full_payment_required: command.full_payment_required, //  '是否全款'  标识是否必须全款，0 为否，1 为是
+                urgent_sale: command.urgent_sale, // '是否急切' 标识是否急切出售，0 为否，1 为是
             })
             .await
             .unwrap();
@@ -280,6 +286,10 @@ impl HouseAggregate {
                 rent_low_pice: command.rent_low_pice,
                 comment: command.comment.unwrap_or_default(),
                 tags: command.tags.unwrap_or_default(),
+                viewing_method: command.viewing_method, // '看房方式',       -- 记录看房的方式（如预约、随时可看等）
+                payment_method: command.payment_method, // '付款方式',      -- 记录付款方式（如一次性付款、按揭贷款等）
+                full_payment_required: command.full_payment_required, // '是否全款', -- 标识是否必须全款，0 为否，1 为是
+                urgent_sale: command.urgent_sale, // '是否急切',           -- 标识是否急切出售，0 为否，1 为是
             })
             .await
             .unwrap();
