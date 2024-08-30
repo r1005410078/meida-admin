@@ -20,6 +20,14 @@ pub struct HouseSecondHandListedPO {
     unlisted_time: Option<NaiveDateTime>,
     comment: String,
     tags: String,
+    // 新增
+    down_payment: Option<BigDecimal>, // '首付' 记录首付金额，精度为两位小数
+    viewing_method: Option<String>,   // '看房方式' 记录看房的方式（如预约、随时可看等）
+    payment_method: Option<String>,   // '付款方式' 记录付款方式（如一次性付款、按揭贷款等）
+    taxes_and_fees: Option<BigDecimal>, // '房源税费' 记录房源涉及的税费，精度为两位小数
+    full_payment_required: Option<bool>, //  '是否全款'  标识是否必须全款，0 为否，1 为是
+    urgent_sale: Option<bool>,        // '是否急切' 标识是否急切出售，0 为否，1 为是
+
     created_at: NaiveDateTime,
     updated_at: NaiveDateTime,
 }

@@ -2,10 +2,11 @@ use qiniu_credential::Uri;
 use qiniu_sdk::download::apis::credential::Credential;
 use qiniu_sdk::upload_token::UploadPolicy;
 use std::time::Duration;
+use std::u64;
 
 static ACCESS_KEY: &str = "SiKapEAp33fGNhZqG1-SAe1TOdd-gzfHxGtk93Au";
 static SECRET_KEY: &str = "6m6LQh8iGGivTO3s5PClYHfOJAxZAjLHLvQE6mjf";
-static BUCKET_NAME: &str = "meidafy";
+static BUCKET_NAME: &str = "meida-family";
 
 pub fn get_upload_token(object_name: &str) -> String {
     let credential = Credential::new(ACCESS_KEY, SECRET_KEY);
@@ -17,7 +18,7 @@ pub fn get_upload_token(object_name: &str) -> String {
 }
 
 pub fn get_upload_url(object_name: &str) -> anyhow::Result<Uri> {
-    let domain = "sixivlovp.hn-bkt.clouddn.com";
+    let domain = "img.rongts.tech";
     let credential: Credential = Credential::new(ACCESS_KEY, SECRET_KEY);
     let mut path = "/".to_string();
     url_escape::encode_path_to_string(object_name, &mut path);
@@ -28,7 +29,7 @@ pub fn get_upload_url(object_name: &str) -> anyhow::Result<Uri> {
         .path_and_query(path)
         .build()?;
 
-    let url = credential.sign_download_url(url, Duration::from_secs(3600));
+    let url = credential.sign_download_url(url, Duration::from_micros(u64::MAX));
 
     Ok(url)
 }
@@ -41,6 +42,6 @@ fn test_get_upload_token() {
 
 #[test]
 fn test_get_upload_token_provider() {
-    let url = get_upload_url("142.jpg").unwrap();
+    let url = get_upload_url("5abcff46-c590-4357-a78f-1ecda164b95a_107.jpg").unwrap();
     println!("{}", url);
 }
