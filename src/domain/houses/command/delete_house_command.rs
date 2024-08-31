@@ -14,7 +14,6 @@ impl DeleteHouseCommand {
     pub fn convert_event(&self) -> DeleteHouseEvent {
         DeleteHouseEvent {
             house_id: self.house_id.clone(),
-            deleted_by: "admin".to_string(),
         }
     }
 }

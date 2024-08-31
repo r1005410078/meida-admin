@@ -3,7 +3,11 @@ CREATE TABLE IF NOT EXISTS residential_aggregate  (
     `community_name` VARCHAR(255) NOT NULL PRIMARY KEY COMMENT '小区名称',
     `region` VARCHAR(255) NOT NULL, -- 小区地址
     `city` VARCHAR(255) NOT NULL,    -- 城市
-    `state` VARCHAR(255) NOT NULL    -- 省份
+    `state` VARCHAR(255) NOT NULL,    -- 省份
+    `created_by` VARCHAR(255) COMMENT '创建人',
+    `updated_by` VARCHAR(255) COMMENT '更新人',
+     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 );
 
 -- 房源聚合
@@ -20,6 +24,9 @@ CREATE TABLE IF NOT EXISTS house_aggregate (
     `rental_unlisted_time` DATETIME DEFAULT NULL COMMENT '租房下架时间',
     `rental_start_time` DATETIME DEFAULT NULL COMMENT '租房开始时间',
     `rental_end_time` DATETIME DEFAULT NULL COMMENT '租期结束时间',
+
+    `created_by` VARCHAR(255)  COMMENT '创建人',
+    `updated_by` VARCHAR(255) COMMENT '更新人',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 );
@@ -33,8 +40,8 @@ CREATE TABLE IF NOT EXISTS  house_second_hand (
     `listed` TINYINT NOT NULL DEFAULT 1 COMMENT '是否上架 0 为下架 1 为上架',
     `listed_time` DATETIME DEFAULT NULL COMMENT '二手房上架时间',
     `unlisted_time` DATETIME DEFAULT NULL COMMENT '二手房下架时间',
-    `comment` TEXT NOT NULL COMMENT '评论',
-    `tags` TEXT NOT NULL COMMENT '标签',
+    `comment` TEXT COMMENT '评论',
+    `tags` TEXT COMMENT '标签',
 
     -- 2024-07-27 03:45:54
     `down_payment` DECIMAL(10, 2) COMMENT '首付',          -- 记录首付金额，精度为两位小数
@@ -44,6 +51,8 @@ CREATE TABLE IF NOT EXISTS  house_second_hand (
     `full_payment_required` TINYINT(1) COMMENT '是否全款', -- 标识是否必须全款，0 为否，1 为是
     `urgent_sale` TINYINT(1) COMMENT '是否急切',           -- 标识是否急切出售，0 为否，1 为是
 
+    `created_by` VARCHAR(255)  COMMENT '创建人',
+    `updated_by` VARCHAR(255) COMMENT '更新人',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 );
@@ -57,6 +66,9 @@ CREATE TABLE IF NOT EXISTS  house_second_hand_sold (
     `days_to_sell` INT  NOT NULL COMMENT '卖了多少天',
     `sold_price` DECIMAL(10, 2) NOT NULL COMMENT '二手房成交价格',
     `sold_time` DATETIME  NOT NULL COMMENT '二手房成交时间',
+
+    `created_by` VARCHAR(255)  COMMENT '创建人',
+    `updated_by` VARCHAR(255) COMMENT '更新人',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 
@@ -72,8 +84,8 @@ CREATE TABLE IF NOT EXISTS  house_rental (
     `listed` TINYINT NOT NULL DEFAULT 1 COMMENT '是否上架 0 为下架 1 为上架',
     `listed_time` DATETIME DEFAULT NULL COMMENT '出租房上架时间',
     `unlisted_time` DATETIME DEFAULT NULL COMMENT '出租房下架时间',
-    `comment` TEXT NOT NULL COMMENT '评论',
-    `tags` TEXT NOT NULL COMMENT '标签',
+    `comment` TEXT COMMENT '评论',
+    `tags` TEXT COMMENT '标签',
 
      -- 2024-07-27 03:45:54
     `viewing_method` VARCHAR(100) COMMENT '看房方式',       -- 记录看房的方式（如预约、随时可看等）
@@ -81,6 +93,8 @@ CREATE TABLE IF NOT EXISTS  house_rental (
     `full_payment_required` TINYINT(1) COMMENT '是否全款', -- 标识是否必须全款，0 为否，1 为是
     `urgent_sale` TINYINT(1) COMMENT '是否急切',           -- 标识是否急切出售，0 为否，1 为是
 
+    `created_by` VARCHAR(255)  COMMENT '创建人',
+    `updated_by` VARCHAR(255) COMMENT '更新人',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 );
@@ -93,6 +107,9 @@ CREATE TABLE IF NOT EXISTS  house_rental_sold (
     `rent_pice`  DECIMAL(10, 2) NOT NULL COMMENT '租金 元/月',
     `rent_start_time` DATETIME NOT NULL COMMENT '开始时间',
     `rent_end_time`  DATETIME NOT NULL COMMENT '到期时间',
+
+    `created_by` VARCHAR(255)  COMMENT '创建人',
+    `updated_by` VARCHAR(255) COMMENT '更新人',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 );

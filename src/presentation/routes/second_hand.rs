@@ -3,7 +3,7 @@ use actix_web::{web, HttpResponse};
 use crate::presentation::{
     guard::users::UserGuard,
     handlers::second_hand::{
-        get_by_house_id, list_listed, list_sold, listed, save, sold, unlisted,
+        delete_second_hand, get_by_house_id, list_listed, list_sold, listed, save, sold, unlisted,
     },
 };
 
@@ -18,7 +18,8 @@ pub fn routes(config: &mut web::ServiceConfig) {
                 .service(list_listed)
                 .service(get_by_house_id)
                 .service(unlisted)
-                .service(list_sold),
+                .service(list_sold)
+                .service(delete_second_hand),
         )
         .default_service(web::route().to(|| HttpResponse::Unauthorized()));
 }

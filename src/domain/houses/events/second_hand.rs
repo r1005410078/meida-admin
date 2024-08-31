@@ -18,6 +18,15 @@ pub struct SaveSecondHandEvent {
     pub taxes_and_fees: Option<BigDecimal>, // '房源税费' 记录房源涉及的税费，精度为两位小数
     pub full_payment_required: Option<bool>, //  '是否全款'  标识是否必须全款，0 为否，1 为是
     pub urgent_sale: Option<bool>,        // '是否急切' 标识是否急切出售，0 为否，1 为是
+
+    pub created_by: Option<String>,
+    pub updated_by: Option<String>,
+}
+
+// 删除销售房
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeleteSecondHandEvent {
+    pub house_id: String,
 }
 
 // 上架成功事件
@@ -27,6 +36,8 @@ pub struct SecondHandListedEvent {
     pub community_name: String,
     pub listed: i8,
     pub listed_time: Option<NaiveDateTime>,
+    pub created_by: Option<String>,
+    pub updated_by: Option<String>,
 }
 
 // 下架成功事件
@@ -36,6 +47,8 @@ pub struct SecondHandUnlistedEvent {
     pub community_name: String,
     pub listed: i8,
     pub unlisted_time: NaiveDateTime,
+    pub created_by: Option<String>,
+    pub updated_by: Option<String>,
 }
 
 // 卖出成功事件
@@ -46,4 +59,6 @@ pub struct SecondHandSoldEvent {
     pub days_to_sell: i32,
     pub sold_price: BigDecimal,
     pub sold_time: NaiveDateTime,
+    pub created_by: Option<String>,
+    pub updated_by: Option<String>,
 }

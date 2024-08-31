@@ -2,6 +2,7 @@ use actix_web::{get, post, web, HttpRequest, HttpResponse};
 use serde_json::Value;
 
 use crate::{
+    common::jwt::Claims,
     infrastructure::repositories::mysql_users_repository::MysqlUsersRepository,
     presentation::{
         dto::users::{LoginDto, QueryUsersDto, SaveUsersDto},
@@ -27,8 +28,15 @@ async fn login(
 #[post("/register")]
 async fn register(
     repo: web::Data<MysqlUsersRepository>,
-    command: web::Json<SaveUsersDto>,
+    mut command: web::Json<SaveUsersDto>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    let user_token = req.headers().get("token").unwrap().to_str().unwrap();
+    let user = Claims::validate(user_token).unwrap();
+
+    command.created_by.replace(user.username.clone());
+    command.updated_by.replace(user.username.clone());
+
     let service = UsersService::new(repo.into_inner());
 
     match service.save(&mut command.convert_to_dao()).await {

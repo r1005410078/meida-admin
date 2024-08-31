@@ -8,4 +8,6 @@ pub struct RentalHouseSoldCommand {
     pub rent_pice: BigDecimal,
     pub rent_start_time: NaiveDateTime,
     pub rent_end_time: NaiveDateTime,
+    pub updated_by: Option<String>,
+    pub created_by: Option<String>,
 }

@@ -19,13 +19,15 @@ impl LoginDto {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SaveUsersDto {
-    id: Option<String>,
-    username: Option<String>,
-    password: Option<String>,
-    phone: Option<String>,
-    avatar: Option<String>,
-    is_active: Option<bool>,
-    role: Option<String>,
+    pub id: Option<String>,
+    pub username: Option<String>,
+    pub password: Option<String>,
+    pub phone: Option<String>,
+    pub avatar: Option<String>,
+    pub is_active: Option<bool>,
+    pub role: Option<String>,
+    pub updated_by: Option<String>,
+    pub created_by: Option<String>,
 }
 
 impl SaveUsersDto {
@@ -38,6 +40,8 @@ impl SaveUsersDto {
             avatar: self.avatar.as_deref(),
             is_active: self.is_active,
             role: self.role.as_deref(),
+            updated_by: self.updated_by.clone(),
+            created_by: self.created_by.clone(),
         }
     }
 }

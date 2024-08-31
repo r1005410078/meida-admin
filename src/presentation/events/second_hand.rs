@@ -5,7 +5,8 @@ use async_trait::async_trait;
 use crate::{
     common::event_channel::EventHandler,
     domain::houses::events::second_hand::{
-        SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent, SecondHandUnlistedEvent,
+        DeleteSecondHandEvent, SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
+        SecondHandUnlistedEvent,
     },
     infrastructure::repositories::mysql_house_repository::MysqlHouseRepository,
     presentation::service::second_hand::SecondHandService,
@@ -57,6 +58,15 @@ impl EventHandler<SecondHandUnlistedEvent> for SecondHandEventHandler {
 impl EventHandler<SecondHandSoldEvent> for SecondHandEventHandler {
     async fn handle(&self, event: SecondHandSoldEvent) -> anyhow::Result<()> {
         self.service.sold(event.clone()).await?;
+        Ok(())
+    }
+}
+
+// 删除二手房
+#[async_trait]
+impl EventHandler<DeleteSecondHandEvent> for SecondHandEventHandler {
+    async fn handle(&self, event: DeleteSecondHandEvent) -> anyhow::Result<()> {
+        self.service.delete_second_hand(event).await?;
         Ok(())
     }
 }

@@ -26,7 +26,7 @@ impl<R: HouseRepository> SecondHandSaleCommandHandler<R> {
                 .second_hand_sale(command, self.sender.clone())
                 .await;
 
-            self.repo.save(&aggregate).await?;
+            self.repo.save(&mut aggregate).await?;
         }
 
         Ok(())

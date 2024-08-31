@@ -15,6 +15,8 @@ pub struct CommunitySaveCommand {
     pub community_type: Option<String>,
     pub description: Option<String>,
     pub property_management_company: Option<String>,
+    pub updated_by: Option<String>,
+    pub created_by: Option<String>,
 }
 
 impl From<CommunitySaveCommand> for SaveCommunityEvent {
@@ -29,6 +31,8 @@ impl From<CommunitySaveCommand> for SaveCommunityEvent {
             community_type: value.community_type.clone(),
             property_management_company: value.property_management_company.clone(),
             description: value.description.clone(),
+            created_by: value.created_by,
+            updated_by: value.updated_by,
         }
     }
 }

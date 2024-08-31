@@ -1,12 +1,15 @@
-use actix_web::{get, post, web, HttpResponse};
+use actix_web::{get, post, web, HttpRequest, HttpResponse};
 use tokio::sync::mpsc::Sender;
 
 use crate::{
+    common::jwt::Claims,
     domain::houses::{
         command::{
             second_hand_command::{
-                SecondHandListedCommand, SecondHandSoldCommand, SecondHandUnlistedCommand,
+                DeleteSecondHandCommand, SecondHandListedCommand, SecondHandSoldCommand,
+                SecondHandUnlistedCommand,
             },
+            second_hand_delete_command_handler::DeleteSecondHandCommandHandler,
             second_hand_listed_command_handler::SecondHandListedCommandHandler,
             second_hand_sale_command_handler::SecondHandSaleCommandHandler,
             second_hand_save_command::SaveSecondHandCommand,
@@ -14,7 +17,7 @@ use crate::{
             second_hand_unlisted_command_handler::SecondHandUnListedCommandHandler,
         },
         events::second_hand::{
-            SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
+            DeleteSecondHandEvent, SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
             SecondHandUnlistedEvent,
         },
     },
@@ -30,8 +33,15 @@ use crate::{
 async fn save(
     repo: web::Data<MysqlHouseRepository>,
     sender: web::Data<Sender<SaveSecondHandEvent>>,
-    command: web::Json<SaveSecondHandCommand>,
+    mut command: web::Json<SaveSecondHandCommand>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    let user_token = req.headers().get("token").unwrap().to_str().unwrap();
+    let user = Claims::validate(user_token).unwrap();
+
+    command.updated_by.replace(user.username.clone());
+    command.created_by.replace(user.username.clone());
+
     let house: SaveSecondHandCommandHandler<std::sync::Arc<MysqlHouseRepository>> =
         SaveSecondHandCommandHandler::new(repo.into_inner(), sender.into_inner());
 
@@ -46,8 +56,15 @@ async fn save(
 async fn listed(
     repo: web::Data<MysqlHouseRepository>,
     sender: web::Data<Sender<SecondHandListedEvent>>,
-    command: web::Json<SecondHandListedCommand>,
+    mut command: web::Json<SecondHandListedCommand>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    let user_token = req.headers().get("token").unwrap().to_str().unwrap();
+    let user = Claims::validate(user_token).unwrap();
+
+    command.updated_by.replace(user.username.clone());
+    command.created_by.replace(user.username.clone());
+
     let house: SecondHandListedCommandHandler<std::sync::Arc<MysqlHouseRepository>> =
         SecondHandListedCommandHandler::new(repo.into_inner(), sender.into_inner());
 
@@ -88,8 +105,15 @@ async fn get_by_house_id(
 async fn unlisted(
     repo: web::Data<MysqlHouseRepository>,
     sender: web::Data<Sender<SecondHandUnlistedEvent>>,
-    command: web::Json<SecondHandUnlistedCommand>,
+    mut command: web::Json<SecondHandUnlistedCommand>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    let user_token = req.headers().get("token").unwrap().to_str().unwrap();
+    let user = Claims::validate(user_token).unwrap();
+
+    command.updated_by.replace(user.username.clone());
+    command.created_by.replace(user.username.clone());
+
     let house: SecondHandUnListedCommandHandler<std::sync::Arc<MysqlHouseRepository>> =
         SecondHandUnListedCommandHandler::new(repo.into_inner(), sender.into_inner());
 
@@ -104,8 +128,15 @@ async fn unlisted(
 async fn sold(
     repo: web::Data<MysqlHouseRepository>,
     sender: web::Data<Sender<SecondHandSoldEvent>>,
-    command: web::Json<SecondHandSoldCommand>,
+    mut command: web::Json<SecondHandSoldCommand>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    let user_token = req.headers().get("token").unwrap().to_str().unwrap();
+    let user = Claims::validate(user_token).unwrap();
+
+    command.updated_by.replace(user.username.clone());
+    command.created_by.replace(user.username.clone());
+
     let house: SecondHandSaleCommandHandler<std::sync::Arc<MysqlHouseRepository>> =
         SecondHandSaleCommandHandler::new(repo.into_inner(), sender.into_inner());
 
@@ -126,4 +157,26 @@ async fn list_sold(
         .await;
 
     HttpResponse::Ok().json(list)
+}
+
+// 删除二手房
+#[post("/delete")]
+async fn delete_second_hand(
+    repo: web::Data<MysqlHouseRepository>,
+    sender: web::Data<Sender<DeleteSecondHandEvent>>,
+    mut command: web::Json<DeleteSecondHandCommand>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let user_token = req.headers().get("token").unwrap().to_str().unwrap();
+    let user = Claims::validate(user_token).unwrap();
+
+    command.updated_by.replace(user.username.clone());
+
+    let delete_second_handler =
+        DeleteSecondHandCommandHandler::new(repo.into_inner(), sender.into_inner());
+
+    match delete_second_handler.handle(command.into_inner()).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+    }
 }

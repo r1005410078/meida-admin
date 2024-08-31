@@ -30,10 +30,10 @@ impl<R: ResidentialRepository> CommunitySaveCommandHandler<R> {
                 .save_residential(command, self.sender.clone())
                 .await?;
 
-            self.repository.save(&aggregates).await?;
+            self.repository.save(&mut aggregates).await?;
         } else {
-            let aggregate = ResidentialAggregate::new(command, self.sender.clone()).await?;
-            self.repository.save(&aggregate).await?;
+            let mut aggregate = ResidentialAggregate::new(command, self.sender.clone()).await?;
+            self.repository.save(&mut aggregate).await?;
         }
 
         Ok(())

@@ -17,4 +17,7 @@ pub struct SaveSecondHandCommand {
     pub taxes_and_fees: Option<BigDecimal>, // '房源税费' 记录房源涉及的税费，精度为两位小数
     pub full_payment_required: Option<bool>, //  '是否全款'  标识是否必须全款，0 为否，1 为是
     pub urgent_sale: Option<bool>,        // '是否急切' 标识是否急切出售，0 为否，1 为是
+
+    pub updated_by: Option<String>,
+    pub created_by: Option<String>,
 }

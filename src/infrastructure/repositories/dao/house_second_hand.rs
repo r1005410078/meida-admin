@@ -38,10 +38,13 @@ pub struct SaveHouseSecondHandListedDto {
     pub taxes_and_fees: Option<BigDecimal>, // '房源税费' 记录房源涉及的税费，精度为两位小数
     pub full_payment_required: Option<bool>, //  '是否全款'  标识是否必须全款，0 为否，1 为是
     pub urgent_sale: Option<bool>,        // '是否急切' 标识是否急切出售，0 为否，1 为是
+
+    pub updated_by: Option<String>,
+    pub created_by: Option<String>,
 }
 
 impl SaveHouseSecondHandListedDto {
-    pub async fn save(&self, pool: DBPool) -> Result<(), diesel::result::Error> {
+    pub async fn save(&mut self, pool: DBPool) -> Result<(), diesel::result::Error> {
         use crate::schema::house_second_hand::dsl::*;
         let mut conn = pool.get().unwrap();
 
@@ -53,13 +56,15 @@ impl SaveHouseSecondHandListedDto {
 
         if !existed {
             diesel::insert_into(house_second_hand)
-                .values(self)
+                .values(self.clone())
                 .execute(&mut conn)
                 .expect("Error saving new house");
         } else {
+            // 不在更新创建人
+            self.created_by.take();
             diesel::update(house_second_hand)
                 .filter(house_id.eq(&self.house_id))
-                .set(self)
+                .set(self.clone())
                 .execute(&mut conn)
                 .expect("Error saving new house");
         }
@@ -76,6 +81,8 @@ pub struct NewHouseSecondHandSoldDto {
     pub days_to_sell: i32,
     pub sold_price: BigDecimal,
     pub sold_time: Option<NaiveDateTime>,
+    pub updated_by: Option<String>,
+    pub created_by: Option<String>,
 }
 
 impl NewHouseSecondHandSoldDto {
@@ -304,6 +311,7 @@ impl QueryHouseSecondHandDto {
         let page_size = self.page_size.unwrap_or(10);
 
         let result = get_query()
+            .order_by(updated_at.desc())
             .offset((page_index - 1) * page_size)
             .limit(page_size);
 
@@ -447,6 +455,7 @@ impl QueryHouseSecondHandSoldDto {
         let page_size = self.page_size.unwrap_or(10);
 
         let result = get_query()
+            .order_by(updated_at.desc())
             .offset((page_index - 1) * page_size)
             .limit(page_size);
 

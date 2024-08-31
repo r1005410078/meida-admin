@@ -1,7 +1,8 @@
-use actix_web::{get, post, web, HttpResponse};
+use actix_web::{get, post, web, HttpRequest, HttpResponse};
 use tokio::sync::mpsc::Sender;
 
 use crate::{
+    common::jwt::Claims,
     domain::houses::{
         command::{
             community_save_command::CommunitySaveCommand,
@@ -21,8 +22,15 @@ use crate::{
 async fn save_community(
     repo: web::Data<MysqlResidentialRepository>,
     sender: web::Data<Sender<SaveCommunityEvent>>,
-    command: web::Json<CommunitySaveCommand>,
+    mut command: web::Json<CommunitySaveCommand>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    let user_token = req.headers().get("token").unwrap().to_str().unwrap();
+    let user = Claims::validate(user_token).unwrap();
+
+    command.updated_by.replace(user.username.clone());
+    command.created_by.replace(user.username.clone());
+
     let residential = CommunitySaveCommandHandler::new(repo.into_inner(), sender.into_inner());
 
     match residential.handle(command.into_inner()).await {

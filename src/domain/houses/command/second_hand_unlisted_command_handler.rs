@@ -26,7 +26,7 @@ impl<R: HouseRepository> SecondHandUnListedCommandHandler<R> {
                 .second_hand_unlisted(command, self.sender.clone())
                 .await;
 
-            self.repo.save(&aggregate).await?;
+            self.repo.save(&mut aggregate).await?;
         }
 
         Ok(())

@@ -8,7 +8,7 @@ use crate::{
 use async_trait::async_trait;
 use diesel::{
     dsl::{exists, select},
-    OptionalExtension,
+    OptionalExtension, SelectableHelper,
 };
 use diesel::{query_dsl::QueryDsl, ExpressionMethods, RunQueryDsl};
 use std::sync::Arc;
@@ -29,7 +29,7 @@ impl MysqlResidentialRepository {
 
     pub async fn save_community(
         &self,
-        input_residential: &SaveCommunityEvent,
+        input_residential: &mut SaveCommunityEvent,
     ) -> Result<(), diesel::result::Error> {
         use crate::schema::residential::dsl::*;
         let conn = &mut self.pool.get().unwrap();
@@ -40,15 +40,15 @@ impl MysqlResidentialRepository {
         .get_result(conn)
         .expect("Error checking if community exists");
 
-        println!("existed: {:?}", existed);
         if !existed {
             diesel::insert_into(residential)
-                .values(input_residential)
+                .values(input_residential.clone())
                 .execute(conn)?;
         } else {
+            input_residential.created_by.take();
             diesel::update(residential)
                 .filter(community_name.eq(input_residential.community_name.clone()))
-                .set(input_residential)
+                .set(input_residential.clone())
                 .execute(conn)?;
         }
 
@@ -75,6 +75,7 @@ impl MysqlResidentialRepository {
         use crate::schema::residential::dsl::*;
         let conn = &mut self.pool.get().unwrap();
         residential
+            .select(Residential::as_select())
             .filter(community_name.eq(input_community_name))
             .first::<Residential>(conn)
             .optional()
@@ -99,7 +100,7 @@ impl MysqlResidentialRepository {
 impl ResidentialRepository for Arc<MysqlResidentialRepository> {
     async fn save(
         &self,
-        input_aggregate: &ResidentialAggregate,
+        input_aggregate: &mut ResidentialAggregate,
     ) -> Result<(), diesel::result::Error> {
         use crate::schema::residential_aggregate::dsl::*;
 
@@ -112,15 +113,16 @@ impl ResidentialRepository for Arc<MysqlResidentialRepository> {
             > 0;
 
         if exist {
+            input_aggregate.created_by.take();
             diesel::update(
                 residential_aggregate
                     .filter(community_name.eq(input_aggregate.community_name.clone())),
             )
-            .set(input_aggregate)
+            .set(input_aggregate.clone())
             .execute(&mut conn)?;
         } else {
             diesel::insert_into(residential_aggregate)
-                .values(input_aggregate)
+                .values(input_aggregate.clone())
                 .execute(&mut self.pool.get().unwrap())?;
         }
 
@@ -132,6 +134,7 @@ impl ResidentialRepository for Arc<MysqlResidentialRepository> {
         let mut conn = self.pool.get().unwrap();
 
         residential_aggregate
+            .select(ResidentialAggregate::as_select())
             .filter(community_name.eq(input_community_name))
             .first::<ResidentialAggregate>(&mut conn)
             .optional()

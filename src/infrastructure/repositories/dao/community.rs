@@ -5,7 +5,6 @@ use crate::{
         repositories::object_value::query_value::{TimeRange, YearRange},
     },
 };
-use chrono::NaiveDateTime;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 
@@ -46,11 +45,11 @@ impl QueryCommunityDao {
             result = result.filter(community_type.eq(input_community_type));
         }
 
-        if let Some(ref input_updated_at) = self.updated_at {
-            let start = NaiveDateTime::from_timestamp_nanos(input_updated_at.start).unwrap();
-            let end = NaiveDateTime::from_timestamp_nanos(input_updated_at.end).unwrap();
-            result = result.filter(updated_at.between(start, end));
-        }
+        // if let Some(ref input_updated_at) = self.updated_at {
+        //     let start = NaiveDateTime::from_timestamp_nanos(input_updated_at.start).unwrap();
+        //     let end = NaiveDateTime::from_timestamp_nanos(input_updated_at.end).unwrap();
+        //     result = result.filter(updated_at.between(start, end));
+        // }
 
         result
             .get_results::<Residential>(conn)

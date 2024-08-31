@@ -1,7 +1,7 @@
 use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
 use diesel::{
-    dsl::{exists, sql},
+    dsl::exists,
     prelude::{AsChangeset, Insertable},
     query_dsl::methods::SelectDsl,
     select, BoolExpressionMethods, ExpressionMethods, QueryDsl, RunQueryDsl,
@@ -9,11 +9,9 @@ use diesel::{
 use diesel::{SelectableHelper, TextExpressionMethods};
 use serde::{Deserialize, Serialize};
 
+use crate::infrastructure::repositories::entities::rental_house::RentalHouseSold;
 use crate::infrastructure::repositories::object_value::query_value::{
     BigDecimalRange, IntRange, YearRange,
-};
-use crate::infrastructure::repositories::{
-    entities::rental_house::RentalHouseSold,
 };
 use crate::schema::house_rental_sold;
 use crate::{
@@ -40,6 +38,11 @@ pub struct SaveRentalHouseDao {
     pub rent_low_pice: Option<BigDecimal>,
     pub comment: Option<String>,
     pub tags: Option<String>,
+    // 2024-07-27 03:45:54
+    pub viewing_method: Option<String>, // '看房方式',       -- 记录看房的方式（如预约、随时可看等）
+    pub payment_method: Option<String>, // '付款方式',      -- 记录付款方式（如一次性付款、按揭贷款等）
+    pub full_payment_required: Option<bool>, // '是否全款', -- 标识是否必须全款，0 为否，1 为是
+    pub urgent_sale: Option<bool>,      // '是否急切',           -- 标识是否急切出售，0 为否，1 为是
 }
 
 impl SaveRentalHouseDao {
@@ -77,6 +80,10 @@ impl From<SaveRentalHouseEvent> for SaveRentalHouseDao {
             rent_low_pice: event.rent_low_pice,
             comment: Some(event.comment),
             tags: Some(event.tags),
+            viewing_method: event.viewing_method,
+            payment_method: event.payment_method,
+            full_payment_required: event.full_payment_required,
+            urgent_sale: event.urgent_sale,
         }
     }
 }
@@ -91,6 +98,10 @@ impl From<RentalHouseListedEvent> for SaveRentalHouseDao {
             rent_low_pice: None,
             comment: None,
             tags: None,
+            viewing_method: None,
+            payment_method: None,
+            full_payment_required: None,
+            urgent_sale: None,
         }
     }
 }
@@ -105,6 +116,10 @@ impl From<RentalHouseUnListedEvent> for SaveRentalHouseDao {
             rent_low_pice: None,
             comment: None,
             tags: None,
+            viewing_method: None,
+            payment_method: None,
+            full_payment_required: None,
+            urgent_sale: None,
         }
     }
 }
@@ -324,6 +339,7 @@ impl QueryRentalHouseListedDto {
             .expect("Error loading rental house");
 
         let data = get_query()
+            .order_by(updated_at.desc())
             .offset((page_index - 1) * page_size)
             .limit(page_size)
             .load::<RentalHouseListed>(conn)
@@ -463,6 +479,7 @@ impl QueryRentalHouseSoldDto {
             .expect("Error loading rental house");
 
         let data = get_query()
+            .order_by(updated_at.desc())
             .offset((page_index - 1) * page_size)
             .limit(page_size)
             .load::<RentalHouseSold>(conn)

@@ -11,25 +11,28 @@ use crate::{
     domain::houses::{
         command::{
             delete_house_command::DeleteHouseCommand,
+            delete_residential_command::DeleteResidentialCommand,
             house_save_command::SaveHouseCommand,
+            rental_house_delete_command::DeleteRentalHouseCommand,
             rental_house_listed_command::RentalHouseListedCommand,
             rental_house_save_command::SaveRentalHouseCommand,
             rental_house_sold_command::RentalHouseSoldCommand,
             rental_house_unlisted_command::RentalHouseUnListedCommand,
             second_hand_command::{
-                SecondHandListedCommand, SecondHandSoldCommand, SecondHandUnlistedCommand,
+                DeleteSecondHandCommand, SecondHandListedCommand, SecondHandSoldCommand,
+                SecondHandUnlistedCommand,
             },
             second_hand_save_command::SaveSecondHandCommand,
         },
         events::{
             house::{DeleteHouseEvent, SaveHouseEvent},
             rental_house::{
-                RentalHouseListedEvent, RentalHouseSoldEvent, RentalHouseUnListedEvent,
-                SaveRentalHouseEvent,
+                DeleteRentalHouseEvent, RentalHouseListedEvent, RentalHouseSoldEvent,
+                RentalHouseUnListedEvent, SaveRentalHouseEvent,
             },
             second_hand::{
-                SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
-                SecondHandUnlistedEvent,
+                DeleteSecondHandEvent, SaveSecondHandEvent, SecondHandListedEvent,
+                SecondHandSoldEvent, SecondHandUnlistedEvent,
             },
         },
         object_value::second_hand::{RentalHouseStatus, SecondHandStatus},
@@ -62,6 +65,10 @@ pub struct HouseAggregate {
     pub rental_start_time: Option<NaiveDateTime>,
     // 租房结束时间
     pub rental_end_time: Option<NaiveDateTime>,
+    // 创建人
+    pub created_by: Option<String>,
+    // 更新人
+    pub updated_by: Option<String>,
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -82,6 +89,8 @@ impl HouseAggregate {
             house_id,
             community_name: command.community_name.clone(),
             house_address: command.house_address.unwrap_or_default(),
+            created_by: command.created_by,
+            updated_by: command.updated_by,
             ..Default::default()
         }
     }
@@ -93,6 +102,9 @@ impl HouseAggregate {
         sender: EventSender<SaveHouseEvent>,
     ) {
         self.community_name = command.community_name.clone();
+        self.created_by = command.created_by.clone();
+        self.updated_by = command.updated_by.clone();
+
         if let Some(address) = command.house_address.clone() {
             self.house_address = address;
         }
@@ -125,6 +137,9 @@ impl HouseAggregate {
         command: SaveSecondHandCommand,
         sender: EventSender<SaveSecondHandEvent>,
     ) {
+        self.created_by = command.created_by.clone();
+        self.updated_by = command.updated_by.clone();
+
         sender
             .send(SaveSecondHandEvent {
                 house_id: command.house_id.clone(),
@@ -139,6 +154,8 @@ impl HouseAggregate {
                 taxes_and_fees: command.taxes_and_fees, // '房源税费' 记录房源涉及的税费，精度为两位小数
                 full_payment_required: command.full_payment_required, //  '是否全款'  标识是否必须全款，0 为否，1 为是
                 urgent_sale: command.urgent_sale, // '是否急切' 标识是否急切出售，0 为否，1 为是
+                created_by: command.created_by,
+                updated_by: command.updated_by,
             })
             .await
             .unwrap();
@@ -150,6 +167,9 @@ impl HouseAggregate {
         command: SecondHandListedCommand,
         sender: EventSender<SecondHandListedEvent>,
     ) {
+        self.created_by = command.created_by.clone();
+        self.updated_by = command.updated_by.clone();
+
         // 如果给是下架或成来没操作过才能上架
         if vec![SecondHandStatus::Unlisted, SecondHandStatus::Unknown]
             .contains(&self.second_hand_status())
@@ -164,6 +184,8 @@ impl HouseAggregate {
                 community_name: self.community_name.clone(),
                 listed: 1,
                 listed_time: self.second_hand_listed_time,
+                created_by: command.created_by,
+                updated_by: command.updated_by,
             })
             .await
             .unwrap();
@@ -175,6 +197,9 @@ impl HouseAggregate {
         command: SecondHandUnlistedCommand,
         sender: EventSender<SecondHandUnlistedEvent>,
     ) {
+        self.created_by = command.created_by.clone();
+        self.updated_by = command.updated_by.clone();
+
         // 如果给是上架才能下架
         if self.second_hand_status() == SecondHandStatus::Listed {}
         // 更新下架时间
@@ -186,6 +211,8 @@ impl HouseAggregate {
                 community_name: self.community_name.clone(),
                 listed: 0,
                 unlisted_time: Utc::now().naive_utc(),
+                created_by: command.created_by,
+                updated_by: command.updated_by,
             })
             .await
             .unwrap();
@@ -197,6 +224,9 @@ impl HouseAggregate {
         command: SecondHandSoldCommand,
         sender: EventSender<SecondHandSoldEvent>,
     ) {
+        self.created_by = command.created_by.clone();
+        self.updated_by = command.updated_by.clone();
+
         // 如果上架了才能卖出
         if self.second_hand_status() == SecondHandStatus::Listed {}
 
@@ -213,6 +243,8 @@ impl HouseAggregate {
                 days_to_sell: 0,
                 sold_price: command.sale_price.clone(),
                 sold_time: self.second_hand_sale_time.unwrap(),
+                created_by: command.created_by,
+                updated_by: command.updated_by,
             })
             .await
             .unwrap();
@@ -265,6 +297,23 @@ impl HouseAggregate {
             RentalHouseStatus::Unlisted
         }
     }
+
+    // 删除房屋
+    pub async fn deleted_second_hand(
+        &mut self,
+        command: DeleteSecondHandCommand,
+        sender: EventSender<DeleteSecondHandEvent>,
+    ) {
+        self.delete_time = Some(Utc::now().naive_utc());
+        self.updated_by = command.updated_by;
+
+        sender
+            .send(DeleteSecondHandEvent {
+                house_id: command.house_id,
+            })
+            .await
+            .unwrap();
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -274,10 +323,13 @@ impl HouseAggregate {
 impl HouseAggregate {
     // 保存出租房
     pub async fn save_rental_house(
-        &self,
+        &mut self,
         command: SaveRentalHouseCommand,
         sender: EventSender<SaveRentalHouseEvent>,
     ) {
+        self.created_by = command.created_by.clone();
+        self.updated_by = command.updated_by.clone();
+
         sender
             .send(SaveRentalHouseEvent {
                 house_id: command.house_id,
@@ -290,6 +342,25 @@ impl HouseAggregate {
                 payment_method: command.payment_method, // '付款方式',      -- 记录付款方式（如一次性付款、按揭贷款等）
                 full_payment_required: command.full_payment_required, // '是否全款', -- 标识是否必须全款，0 为否，1 为是
                 urgent_sale: command.urgent_sale, // '是否急切',           -- 标识是否急切出售，0 为否，1 为是
+                created_by: command.created_by,
+                updated_by: command.updated_by,
+            })
+            .await
+            .unwrap();
+    }
+
+    // 删除房屋
+    pub async fn deleted_rental_house(
+        &mut self,
+        command: DeleteRentalHouseCommand,
+        sender: EventSender<DeleteRentalHouseEvent>,
+    ) {
+        self.delete_time = Some(Utc::now().naive_utc());
+        self.updated_by = command.updated_by;
+
+        sender
+            .send(DeleteRentalHouseEvent {
+                house_id: command.house_id,
             })
             .await
             .unwrap();
@@ -301,6 +372,9 @@ impl HouseAggregate {
         command: RentalHouseListedCommand,
         sender: EventSender<RentalHouseListedEvent>,
     ) {
+        self.created_by = command.created_by.clone();
+        self.updated_by = command.updated_by.clone();
+
         let status: RentalHouseStatus = self.rental_house_status();
         if status == RentalHouseStatus::Unlisted {
             // 更新上架时间
@@ -309,6 +383,8 @@ impl HouseAggregate {
                 .send(RentalHouseListedEvent {
                     house_id: command.house_id,
                     listed: 1,
+                    created_by: command.created_by,
+                    updated_by: command.updated_by,
                 })
                 .await
                 .unwrap();
@@ -321,6 +397,9 @@ impl HouseAggregate {
         command: RentalHouseUnListedCommand,
         sender: EventSender<RentalHouseUnListedEvent>,
     ) {
+        self.created_by = command.created_by.clone();
+        self.updated_by = command.updated_by.clone();
+
         let status: RentalHouseStatus = self.rental_house_status();
         if status == RentalHouseStatus::Listed {
             // 更新下架时间
@@ -329,6 +408,8 @@ impl HouseAggregate {
                 .send(RentalHouseUnListedEvent {
                     house_id: command.house_id,
                     listed: 0,
+                    created_by: command.created_by,
+                    updated_by: command.updated_by,
                 })
                 .await
                 .unwrap();
@@ -341,6 +422,9 @@ impl HouseAggregate {
         command: RentalHouseSoldCommand,
         sender: EventSender<RentalHouseSoldEvent>,
     ) {
+        self.created_by = command.created_by.clone();
+        self.updated_by = command.updated_by.clone();
+
         let status: RentalHouseStatus = self.rental_house_status();
         if status == RentalHouseStatus::Listed {
             // 更新卖出时间
@@ -352,6 +436,8 @@ impl HouseAggregate {
                     rent_pice: command.rent_pice,
                     rent_start_time: command.rent_start_time,
                     rent_end_time: command.rent_end_time,
+                    created_by: command.created_by,
+                    updated_by: command.updated_by,
                 })
                 .await
                 .unwrap();

@@ -50,21 +50,3 @@ impl Claims {
         }
     }
 }
-
-mod tests {
-    use crate::common::jwt::Claims;
-
-    #[test]
-    fn test() {
-        let c = Claims::new(
-            "meida".to_string(),
-            "b@b.com".to_string(),
-            "admin".to_string(),
-        );
-        println!("{:?}", c.get_token());
-
-        let xx = Claims::validate(&c.get_token());
-
-        println!("{:?}", xx);
-    }
-}

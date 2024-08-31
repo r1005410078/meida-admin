@@ -2,15 +2,13 @@ use super::dao::house_second_hand::{
     NewHouseSecondHandSoldDto, QueryHouseSecondHandDto, QueryHouseSecondHandSoldDto,
     SaveHouseSecondHandListedDto,
 };
-
 use super::entities::house_second_hand::{HouseSecondHandListed, HouseSecondHandSold};
 use super::mysql_house_repository::MysqlHouseRepository;
 use super::object_value::query_value::TableData;
 use crate::domain::houses::events::second_hand::{
     SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent, SecondHandUnlistedEvent,
 };
-
-use diesel::{ExpressionMethods, SelectableHelper};
+use diesel::{ExpressionMethods, OptionalExtension, SelectableHelper};
 use diesel::{QueryDsl, RunQueryDsl};
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22,7 +20,7 @@ impl MysqlHouseRepository {
         &self,
         event: SaveSecondHandEvent,
     ) -> Result<(), diesel::result::Error> {
-        let dto = SaveHouseSecondHandListedDto {
+        let mut dto = SaveHouseSecondHandListedDto {
             house_id: event.house_id,
             community_name: event.community_name,
             listed_time: None,
@@ -38,7 +36,10 @@ impl MysqlHouseRepository {
             taxes_and_fees: event.taxes_and_fees, // '房源税费' 记录房源涉及的税费，精度为两位小数
             full_payment_required: event.full_payment_required, //  '是否全款'  标识是否必须全款，0 为否，1 为是
             urgent_sale: event.urgent_sale, // '是否急切' 标识是否急切出售，0 为否，1 为是
+            created_by: event.created_by,
+            updated_by: event.updated_by,
         };
+
         dto.save(self.pool.clone()).await
     }
 
@@ -47,7 +48,7 @@ impl MysqlHouseRepository {
         &self,
         event: SecondHandListedEvent,
     ) -> Result<(), diesel::result::Error> {
-        let dto = SaveHouseSecondHandListedDto {
+        let mut dto = SaveHouseSecondHandListedDto {
             house_id: event.house_id,
             community_name: event.community_name,
             listed_time: None,
@@ -63,6 +64,8 @@ impl MysqlHouseRepository {
             taxes_and_fees: None,        // '房源税费' 记录房源涉及的税费，精度为两位小数
             full_payment_required: None, //  '是否全款'  标识是否必须全款，0 为否，1 为是
             urgent_sale: None,           // '是否急切' 标识是否急切出售，0 为否，1 为是
+            created_by: event.created_by,
+            updated_by: event.updated_by,
         };
 
         dto.save(self.pool.clone()).await
@@ -73,7 +76,7 @@ impl MysqlHouseRepository {
         &self,
         event: SecondHandUnlistedEvent,
     ) -> Result<(), diesel::result::Error> {
-        let dto = SaveHouseSecondHandListedDto {
+        let mut dto = SaveHouseSecondHandListedDto {
             house_id: event.house_id,
             community_name: event.community_name,
             unlisted_time: Some(event.unlisted_time),
@@ -89,6 +92,8 @@ impl MysqlHouseRepository {
             taxes_and_fees: None,
             full_payment_required: None,
             urgent_sale: None,
+            created_by: event.created_by,
+            updated_by: event.updated_by,
         };
 
         dto.save(self.pool.clone()).await
@@ -113,6 +118,8 @@ impl MysqlHouseRepository {
             days_to_sell: event.days_to_sell,
             sold_price: event.sold_price,
             sold_time: Some(event.sold_time),
+            created_by: event.created_by,
+            updated_by: event.updated_by,
         };
 
         dto.create(self.pool.clone()).await
@@ -139,7 +146,10 @@ impl MysqlHouseRepository {
     }
 
     // 根据id查找二手房
-    pub fn house_second_hand_by_house_id(&self, input_house_id: String) -> HouseSecondHandListed {
+    pub fn house_second_hand_by_house_id(
+        &self,
+        input_house_id: String,
+    ) -> Option<HouseSecondHandListed> {
         use crate::schema::house;
         use crate::schema::house_second_hand::dsl::*;
         use crate::schema::residential;
@@ -156,6 +166,7 @@ impl MysqlHouseRepository {
             HouseSecondHandListed::as_select(),
         )
         .first::<HouseSecondHandListed>(&mut conn)
+        .optional()
         .expect("Error loading houses")
     }
 }

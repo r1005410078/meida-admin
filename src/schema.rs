@@ -9,7 +9,7 @@ diesel::table! {
         #[max_length = 255]
         house_address -> Varchar,
         #[max_length = 50]
-        property -> Varchar,
+        property -> Nullable<Varchar>,
         #[max_length = 255]
         decoration_status -> Nullable<Varchar>,
         area -> Decimal,
@@ -19,23 +19,18 @@ diesel::table! {
         #[max_length = 20]
         orientation -> Nullable<Varchar>,
         house_description -> Nullable<Text>,
-        #[max_length = 255]
-        house_image -> Nullable<Varchar>,
+        house_image -> Nullable<Text>,
         #[max_length = 100]
         owner_name -> Varchar,
         #[max_length = 20]
         owner_phone -> Varchar,
-        #[max_length = 255]
-        created_by -> Nullable<Varchar>,
-        #[max_length = 255]
-        updated_by -> Nullable<Varchar>,
-        floor -> Integer,
+        floor -> Nullable<Integer>,
         #[max_length = 255]
         floor_range -> Nullable<Varchar>,
         #[max_length = 255]
         title -> Varchar,
         #[max_length = 255]
-        recommended_tags -> Varchar,
+        recommended_tags -> Nullable<Varchar>,
         elevator -> Nullable<Integer>,
         household -> Nullable<Integer>,
         balcony -> Nullable<Integer>,
@@ -54,13 +49,17 @@ diesel::table! {
         household_registration -> Nullable<Varchar>,
         unique_house -> Nullable<Bool>,
         facilities -> Nullable<Text>,
-        usable_area -> Decimal,
+        usable_area -> Nullable<Decimal>,
         #[max_length = 255]
         current_status -> Nullable<Varchar>,
         #[max_length = 255]
         house_type -> Nullable<Varchar>,
         #[max_length = 100]
         source -> Nullable<Varchar>,
+        #[max_length = 255]
+        created_by -> Nullable<Varchar>,
+        #[max_length = 255]
+        updated_by -> Nullable<Varchar>,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }
@@ -83,6 +82,10 @@ diesel::table! {
         rental_unlisted_time -> Nullable<Datetime>,
         rental_start_time -> Nullable<Datetime>,
         rental_end_time -> Nullable<Datetime>,
+        #[max_length = 255]
+        created_by -> Nullable<Varchar>,
+        #[max_length = 255]
+        updated_by -> Nullable<Varchar>,
         created_at -> Datetime,
         updated_at -> Datetime,
     }
@@ -99,14 +102,18 @@ diesel::table! {
         listed -> Tinyint,
         listed_time -> Nullable<Datetime>,
         unlisted_time -> Nullable<Datetime>,
-        comment -> Text,
-        tags -> Text,
+        comment -> Nullable<Text>,
+        tags -> Nullable<Text>,
         #[max_length = 100]
         viewing_method -> Nullable<Varchar>,
         #[max_length = 100]
         payment_method -> Nullable<Varchar>,
         full_payment_required -> Nullable<Bool>,
         urgent_sale -> Nullable<Bool>,
+        #[max_length = 255]
+        created_by -> Nullable<Varchar>,
+        #[max_length = 255]
+        updated_by -> Nullable<Varchar>,
         created_at -> Datetime,
         updated_at -> Datetime,
     }
@@ -122,6 +129,10 @@ diesel::table! {
         rent_pice -> Decimal,
         rent_start_time -> Datetime,
         rent_end_time -> Datetime,
+        #[max_length = 255]
+        created_by -> Nullable<Varchar>,
+        #[max_length = 255]
+        updated_by -> Nullable<Varchar>,
         created_at -> Datetime,
         updated_at -> Datetime,
     }
@@ -138,8 +149,8 @@ diesel::table! {
         listed -> Tinyint,
         listed_time -> Nullable<Datetime>,
         unlisted_time -> Nullable<Datetime>,
-        comment -> Text,
-        tags -> Text,
+        comment -> Nullable<Text>,
+        tags -> Nullable<Text>,
         down_payment -> Nullable<Decimal>,
         #[max_length = 100]
         viewing_method -> Nullable<Varchar>,
@@ -148,6 +159,10 @@ diesel::table! {
         taxes_and_fees -> Nullable<Decimal>,
         full_payment_required -> Nullable<Bool>,
         urgent_sale -> Nullable<Bool>,
+        #[max_length = 255]
+        created_by -> Nullable<Varchar>,
+        #[max_length = 255]
+        updated_by -> Nullable<Varchar>,
         created_at -> Datetime,
         updated_at -> Datetime,
     }
@@ -163,6 +178,10 @@ diesel::table! {
         days_to_sell -> Integer,
         sold_price -> Decimal,
         sold_time -> Datetime,
+        #[max_length = 255]
+        created_by -> Nullable<Varchar>,
+        #[max_length = 255]
+        updated_by -> Nullable<Varchar>,
         created_at -> Datetime,
         updated_at -> Datetime,
     }
@@ -180,12 +199,16 @@ diesel::table! {
         state -> Varchar,
         #[max_length = 20]
         postal_code -> Varchar,
-        year_built -> Smallint,
+        year_built -> Nullable<Smallint>,
         #[max_length = 100]
         community_type -> Varchar,
         #[max_length = 100]
-        property_management_company -> Varchar,
+        property_management_company -> Nullable<Varchar>,
         description -> Nullable<Text>,
+        #[max_length = 255]
+        created_by -> Nullable<Varchar>,
+        #[max_length = 255]
+        updated_by -> Nullable<Varchar>,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }
@@ -201,6 +224,12 @@ diesel::table! {
         city -> Varchar,
         #[max_length = 255]
         state -> Varchar,
+        #[max_length = 255]
+        created_by -> Nullable<Varchar>,
+        #[max_length = 255]
+        updated_by -> Nullable<Varchar>,
+        created_at -> Nullable<Datetime>,
+        updated_at -> Nullable<Datetime>,
     }
 }
 
@@ -219,6 +248,10 @@ diesel::table! {
         is_active -> Nullable<Bool>,
         #[max_length = 20]
         role -> Nullable<Varchar>,
+        #[max_length = 255]
+        created_by -> Nullable<Varchar>,
+        #[max_length = 255]
+        updated_by -> Nullable<Varchar>,
         created_at -> Nullable<Timestamp>,
         updated_at -> Nullable<Timestamp>,
     }

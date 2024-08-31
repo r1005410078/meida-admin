@@ -16,8 +16,8 @@ impl ResidentialService {
         Self { repo }
     }
 
-    pub async fn save(&self, event: SaveCommunityEvent) -> Result<(), diesel::result::Error> {
-        self.repo.save_community(&event).await
+    pub async fn save(&self, mut event: SaveCommunityEvent) -> Result<(), diesel::result::Error> {
+        self.repo.save_community(&mut event).await
     }
 
     pub async fn delete_by_name(

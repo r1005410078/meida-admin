@@ -7,8 +7,7 @@ use crate::{
 };
 use diesel::{
     prelude::{AsChangeset, Insertable},
-    ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl, SelectableHelper,
-    TextExpressionMethods,
+    ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, TextExpressionMethods,
 };
 use serde::{Deserialize, Serialize};
 
@@ -22,6 +21,8 @@ pub struct SaveUsersDao<'a> {
     pub avatar: Option<&'a str>,
     pub is_active: Option<bool>,
     pub role: Option<&'a str>,
+    pub updated_by: Option<String>,
+    pub created_by: Option<String>,
 }
 
 impl SaveUsersDao<'_> {
@@ -93,6 +94,7 @@ impl QueryUsersDao<'_> {
         let page_size = self.page_size.unwrap_or(10);
 
         let result = get_query()
+            .order_by(updated_at.desc())
             .offset((page_index - 1) * page_size)
             .limit(page_size);
 

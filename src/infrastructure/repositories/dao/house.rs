@@ -176,6 +176,7 @@ impl QueryHouseDao {
         let page_index = self.page_index.unwrap_or(1);
         let page_size = self.page_size.unwrap_or(10);
         let data = get_query()
+            .order_by(updated_at.desc())
             .offset((page_index - 1) * page_size)
             .limit(page_size)
             .load::<HousePO>(conn)

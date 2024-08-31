@@ -1,8 +1,9 @@
-use actix_web::{get, post, web, HttpResponse};
+use actix_web::{get, post, web, HttpRequest, HttpResponse};
 use serde_json::json;
 use tokio::sync::mpsc::Sender;
 
 use crate::{
+    common::jwt::Claims,
     domain::houses::{
         command::{
             delete_house_command::DeleteHouseCommand,
@@ -22,8 +23,15 @@ use crate::{
 async fn save_house(
     repo: web::Data<MysqlHouseRepository>,
     sender: web::Data<Sender<SaveHouseEvent>>,
-    command: web::Json<SaveHouseCommand>,
+    mut command: web::Json<SaveHouseCommand>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    let user_token = req.headers().get("token").unwrap().to_str().unwrap();
+    let user = Claims::validate(user_token).unwrap();
+
+    command.updated_by.replace(user.username.clone());
+    command.created_by.replace(user.username.clone());
+
     let house = HouseSaveCommandHandler::new(repo.into_inner(), sender.into_inner());
 
     match house.handle(command.into_inner()).await {

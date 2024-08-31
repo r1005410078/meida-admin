@@ -66,4 +66,12 @@ impl MysqlUsersRepository {
             .optional()
             .expect("Error loading users")
     }
+
+    // pub async fn get_user_by_token(&self, token: &str) -> Option<UsersVO> {
+    //     if let Some(c) = self.validate(token).ok() {
+    //         self.get_user(&c.get_token()).await
+    //     } else {
+    //         None
+    //     }
+    // }
 }

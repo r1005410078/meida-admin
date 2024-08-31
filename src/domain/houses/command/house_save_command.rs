@@ -22,6 +22,7 @@ pub struct SaveHouseCommand {
     pub house_image: Option<String>,       // '户型图',
     pub owner_name: Option<String>,        // '业主姓名',
     pub owner_phone: Option<String>,       // '业主电话',
+
     // 2024-07-24 00:00:00
     pub title: Option<String>,            // '房源标题',
     pub recommended_tags: Option<String>, // '推荐标签',
@@ -44,6 +45,9 @@ pub struct SaveHouseCommand {
     pub usable_area: Option<BigDecimal>,        // '使用面积',
     pub current_status: Option<String>,         // '现状',
     pub house_type: Option<String>,             // '房屋类型',
+
+    pub updated_by: Option<String>,
+    pub created_by: Option<String>,
 }
 
 impl SaveHouseCommand {
@@ -64,7 +68,7 @@ impl SaveHouseCommand {
             house_image: self.house_image,
             owner_name: self.owner_name,
             owner_phone: self.owner_phone,
-            updated_by: None,
+
             // 2024-07-24 00:00:00
             title: self.title,
             recommended_tags: self.recommended_tags,
@@ -87,55 +91,9 @@ impl SaveHouseCommand {
             usable_area: self.usable_area,
             current_status: self.current_status,
             house_type: self.house_type,
+
+            updated_by: self.updated_by,
+            created_by: self.created_by,
         }
-    }
-}
-
-mod tests {
-
-    use serde_json::json;
-
-    use super::*;
-
-    #[test]
-    fn test() {
-        let data: SaveHouseCommand = serde_json::from_value(json!({
-          "owner_name": "多大",
-          "owner_phone": "18626891229",
-          "community_name": "董家弄",
-          "house_address": "董家弄 10 幢 2单元202",
-          "property": "商品房住宅",
-          "area": 123,
-          "usable_area": 123,
-          "orientation": "东",
-          "decoration_status": "毛坯",
-          "facilities": "床",
-          "current_status": "空置",
-          "house_type": "复式住宅",
-          "building_structure": "砖木结构",
-          "property_rights": "安置房",
-          "floor_range": "11",
-          "floor": 1,
-          "elevator": 1,
-          "household": 1,
-          "bedrooms": 1,
-          "living_rooms": 1,
-          "balcony": 1,
-          "kitchen": 1,
-          "building_year": "2024-08-13",
-          "property_duration": 2014,
-          "property_date": "2024-08-13",
-          "delivery_date": "2024-08-11",
-          "school_qualification": "2024",
-          "household_registration": "集体户口可买",
-          "unique_house": true,
-          "source": "上门",
-          "house_description": "dd"
-        }))
-        .map_err(|e| {
-            println!("111 {:?}", e);
-            e
-        })
-        .unwrap();
     }
 }

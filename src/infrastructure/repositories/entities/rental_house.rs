@@ -18,8 +18,16 @@ pub struct RentalHouseListedPO {
     listed: i8,
     listed_time: Option<NaiveDateTime>,
     unlisted_time: Option<NaiveDateTime>,
-    comment: String,
-    tags: String,
+    comment: Option<String>,
+    tags: Option<String>,
+    // 2024-07-27 03:45:54
+    viewing_method: Option<String>, // '看房方式',       -- 记录看房的方式（如预约、随时可看等）
+    payment_method: Option<String>, // '付款方式',      -- 记录付款方式（如一次性付款、按揭贷款等）
+    full_payment_required: Option<bool>, // '是否全款', -- 标识是否必须全款，0 为否，1 为是
+    urgent_sale: Option<bool>,      // '是否急切',           -- 标识是否急切出售，0 为否，1 为是
+
+    created_by: Option<String>,
+    updated_by: Option<String>,
     created_at: NaiveDateTime,
     updated_at: NaiveDateTime,
 }
@@ -33,6 +41,8 @@ pub struct RentalHouseSoldPO {
     rent_pice: BigDecimal,
     rent_start_time: NaiveDateTime,
     rent_end_time: NaiveDateTime,
+    created_by: Option<String>,
+    updated_by: Option<String>,
     created_at: NaiveDateTime,
     updated_at: NaiveDateTime,
 }

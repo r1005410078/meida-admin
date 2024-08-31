@@ -11,8 +11,7 @@ pub struct HousePO {
     pub house_id: String,
     pub community_name: String,
     pub house_address: String,
-    pub floor: i32,
-    pub property: String,
+    pub property: Option<String>,
     pub decoration_status: Option<String>,
     pub area: BigDecimal,
     pub bedrooms: i32,
@@ -23,12 +22,11 @@ pub struct HousePO {
     pub house_image: Option<String>,
     pub owner_name: String,
     pub owner_phone: String,
-    pub created_by: Option<String>,
-    pub updated_by: Option<String>,
 
     // 2024-07-24 00:00:00
     pub title: String,            // '房源标题',
-    pub recommended_tags: String, // '推荐标签',
+    pub recommended_tags: Option<String>, // '推荐标签',
+    pub floor: Option<i32>,
     pub floor_range: Option<String>,
     pub elevator: Option<i32>,                  // '梯',
     pub household: Option<i32>,                 // '户',
@@ -45,10 +43,12 @@ pub struct HousePO {
     pub source: Option<String>,                 // '来源',
     pub unique_house: Option<bool>,             // '唯一住房',
     pub facilities: Option<String>,             // '配套',
-    pub usable_area: BigDecimal,                // '使用面积',
+    pub usable_area: Option<BigDecimal>,        // '使用面积',
     pub current_status: Option<String>,         // '现状',
     pub house_type: Option<String>,             // '房屋类型',
 
+    pub created_by: Option<String>,
+    pub updated_by: Option<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }

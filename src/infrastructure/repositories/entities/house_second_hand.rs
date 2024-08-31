@@ -18,8 +18,8 @@ pub struct HouseSecondHandListedPO {
     listed: i8,
     listed_time: Option<NaiveDateTime>,
     unlisted_time: Option<NaiveDateTime>,
-    comment: String,
-    tags: String,
+    comment: Option<String>,
+    tags: Option<String>,
     // 新增
     down_payment: Option<BigDecimal>, // '首付' 记录首付金额，精度为两位小数
     viewing_method: Option<String>,   // '看房方式' 记录看房的方式（如预约、随时可看等）
@@ -28,6 +28,8 @@ pub struct HouseSecondHandListedPO {
     full_payment_required: Option<bool>, //  '是否全款'  标识是否必须全款，0 为否，1 为是
     urgent_sale: Option<bool>,        // '是否急切' 标识是否急切出售，0 为否，1 为是
 
+    created_by: Option<String>,
+    updated_by: Option<String>,
     created_at: NaiveDateTime,
     updated_at: NaiveDateTime,
 }
@@ -41,6 +43,8 @@ pub struct HouseSecondHandSoldPO {
     days_to_sell: i32,
     sold_price: BigDecimal,
     sold_time: NaiveDateTime,
+    created_by: Option<String>,
+    updated_by: Option<String>,
     created_at: NaiveDateTime,
     updated_at: NaiveDateTime,
 }

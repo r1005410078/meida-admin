@@ -7,6 +7,8 @@ use actix_web::{middleware::Logger, web, App, Error, HttpRequest, HttpServer};
 use log::info;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
+use crate::domain::houses::events::rental_house::DeleteRentalHouseEvent;
+use crate::domain::houses::events::second_hand::DeleteSecondHandEvent;
 use crate::{
     common::event_channel::EventChannel,
     domain::houses::events::{
@@ -110,6 +112,13 @@ pub async fn run() -> std::io::Result<()> {
         .sender,
     );
 
+    let second_hand_delete_sender = web::Data::new(
+        EventChannel::<DeleteSecondHandEvent>::new(SecondHandEventHandler::new(
+            house.clone().into_inner(),
+        ))
+        .sender,
+    );
+
     // 租房
     let save_rental_house_sender = web::Data::new(
         EventChannel::<SaveRentalHouseEvent>::new(RentalHouseHandler::new(
@@ -137,6 +146,14 @@ pub async fn run() -> std::io::Result<()> {
     // 出售
     let rental_house_sold_event = web::Data::new(
         EventChannel::<RentalHouseSoldEvent>::new(RentalHouseHandler::new(
+            house.clone().into_inner(),
+        ))
+        .sender,
+    );
+
+    // 删除
+    let delete_rental_house = web::Data::new(
+        EventChannel::<DeleteRentalHouseEvent>::new(RentalHouseHandler::new(
             house.clone().into_inner(),
         ))
         .sender,
@@ -174,10 +191,12 @@ pub async fn run() -> std::io::Result<()> {
             .app_data(second_hand_unlisted_sender.clone())
             .app_data(second_hand_scale_sender.clone())
             .app_data(save_second_hand_sender.clone())
+            .app_data(second_hand_delete_sender.clone())
             .app_data(save_rental_house_sender.clone())
             .app_data(rental_house_listed_event.clone())
             .app_data(rental_house_unlisted_event.clone())
             .app_data(rental_house_sold_event.clone())
+            .app_data(delete_rental_house.clone())
             .wrap(Logger::default())
             .configure(routes::residential_routes::routes)
             .configure(routes::house::routes)

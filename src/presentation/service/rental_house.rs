@@ -64,4 +64,9 @@ impl RentalHouseService {
     pub async fn detail(&self, house_id: String) -> Option<RentalHouseListed> {
         self.repo.house_rental_house_by_house_id(house_id).await
     }
+
+    // 删除
+    pub async fn delete(&self, house_id: String) -> Result<(), diesel::result::Error> {
+        self.repo.delete_rental_house_by_house_id(house_id).await
+    }
 }

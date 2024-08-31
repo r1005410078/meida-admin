@@ -14,6 +14,8 @@ pub struct UsersPO {
     pub avatar: Option<String>,
     pub is_active: Option<bool>,
     pub role: Option<String>,
+    pub created_by: Option<String>,
+    pub updated_by: Option<String>,
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
 }
@@ -27,6 +29,8 @@ pub struct UsersVO {
     pub avatar: Option<String>,
     pub is_active: Option<bool>,
     pub role: Option<String>,
+    pub created_by: Option<String>,
+    pub updated_by: Option<String>,
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
 }

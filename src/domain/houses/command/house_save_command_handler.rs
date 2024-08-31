@@ -24,14 +24,14 @@ impl<R: HouseRepository> HouseSaveCommandHandler<R> {
                 aggregate
                     .update_house(command.clone(), self.sender.clone())
                     .await;
-                self.repo.save(&aggregate).await?;
 
+                self.repo.save(&mut aggregate).await?;
                 return Ok(house_id.clone());
             }
         }
 
-        let aggregate = HouseAggregate::new(command.clone(), self.sender.clone()).await;
-        self.repo.save(&aggregate).await?;
+        let mut aggregate = HouseAggregate::new(command.clone(), self.sender.clone()).await;
+        self.repo.save(&mut aggregate).await?;
         Ok(aggregate.house_id)
     }
 }

@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use crate::{
     domain::houses::events::second_hand::{
-        SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent, SecondHandUnlistedEvent,
+        DeleteSecondHandEvent, SaveSecondHandEvent, SecondHandListedEvent, SecondHandSoldEvent,
+        SecondHandUnlistedEvent,
     },
     infrastructure::repositories::{
         dao::house_second_hand::{QueryHouseSecondHandDto, QueryHouseSecondHandSoldDto},
@@ -43,7 +44,7 @@ impl SecondHandService {
     pub async fn house_second_hand_by_house_id(
         &self,
         input_house_id: String,
-    ) -> HouseSecondHandListed {
+    ) -> Option<HouseSecondHandListed> {
         self.repo
             .house_second_hand_by_house_id(input_house_id)
             .into()
@@ -73,5 +74,15 @@ impl SecondHandService {
         query: QueryHouseSecondHandSoldDto,
     ) -> TableData<HouseSecondHandSold> {
         self.repo.house_second_hand_sold_list(query).await
+    }
+
+    // 删除二手房
+    pub async fn delete_second_hand(
+        &self,
+        event: DeleteSecondHandEvent,
+    ) -> Result<(), diesel::result::Error> {
+        self.repo
+            .delete_house_second_hand_by_house_id(event.house_id)
+            .await
     }
 }

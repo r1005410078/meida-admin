@@ -4,9 +4,12 @@ use async_trait::async_trait;
 
 use crate::{
     common::event_channel::EventHandler,
-    domain::houses::events::rental_house::{
-        RentalHouseListedEvent, RentalHouseSoldEvent, RentalHouseUnListedEvent,
-        SaveRentalHouseEvent,
+    domain::houses::events::{
+        house::DeleteHouseEvent,
+        rental_house::{
+            DeleteRentalHouseEvent, RentalHouseListedEvent, RentalHouseSoldEvent,
+            RentalHouseUnListedEvent, SaveRentalHouseEvent,
+        },
     },
     infrastructure::repositories::mysql_house_repository::MysqlHouseRepository,
     presentation::service::rental_house::RentalHouseService,
@@ -53,6 +56,15 @@ impl EventHandler<RentalHouseUnListedEvent> for RentalHouseHandler {
 impl EventHandler<RentalHouseSoldEvent> for RentalHouseHandler {
     async fn handle(&self, event: RentalHouseSoldEvent) -> anyhow::Result<()> {
         self.service.sold(event.clone()).await?;
+        Ok(())
+    }
+}
+
+// 删除
+#[async_trait]
+impl EventHandler<DeleteRentalHouseEvent> for RentalHouseHandler {
+    async fn handle(&self, event: DeleteRentalHouseEvent) -> anyhow::Result<()> {
+        self.service.delete(event.house_id).await?;
         Ok(())
     }
 }

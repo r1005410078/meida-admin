@@ -14,4 +14,7 @@ pub struct SaveRentalHouseCommand {
     pub payment_method: Option<String>, // '付款方式',      -- 记录付款方式（如一次性付款、按揭贷款等）
     pub full_payment_required: Option<bool>, // '是否全款', -- 标识是否必须全款，0 为否，1 为是
     pub urgent_sale: Option<bool>,      // '是否急切',           -- 标识是否急切出售，0 为否，1 为是
+
+    pub updated_by: Option<String>,
+    pub created_by: Option<String>,
 }

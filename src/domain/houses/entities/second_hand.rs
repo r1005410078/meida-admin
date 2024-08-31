@@ -9,6 +9,8 @@ pub struct SecondHand {
     pice: BigDecimal,
     low_pice: Option<BigDecimal>,
     sale_price: Option<BigDecimal>,
+    created_by: Option<String>,
+    updated_by: Option<String>,
     created_at: Option<NaiveDateTime>,
     updated_at: Option<NaiveDateTime>,
 }

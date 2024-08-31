@@ -1,9 +1,12 @@
-use actix_web::{get, post, web, HttpResponse};
+use actix_web::{get, post, web, HttpRequest, HttpResponse};
 use tokio::sync::mpsc::Sender;
 
 use crate::{
+    common::jwt::Claims,
     domain::houses::{
         command::{
+            rental_house_delete_command::DeleteRentalHouseCommand,
+            rental_house_delete_command_handler::DeleteRentalHouseCommandHandler,
             rental_house_listed_command::RentalHouseListedCommand,
             rental_house_listed_command_handler::RentalHouseListedCommandHandler,
             rental_house_save_command::SaveRentalHouseCommand,
@@ -14,8 +17,8 @@ use crate::{
             rental_house_unlisted_command_handler::RentalHouseUnListedCommandHandler,
         },
         events::rental_house::{
-            RentalHouseListedEvent, RentalHouseSoldEvent, RentalHouseUnListedEvent,
-            SaveRentalHouseEvent,
+            DeleteRentalHouseEvent, RentalHouseListedEvent, RentalHouseSoldEvent,
+            RentalHouseUnListedEvent, SaveRentalHouseEvent,
         },
     },
     infrastructure::repositories::{
@@ -29,8 +32,15 @@ use crate::{
 async fn save(
     repo: web::Data<MysqlHouseRepository>,
     sender: web::Data<Sender<SaveRentalHouseEvent>>,
-    command: web::Json<SaveRentalHouseCommand>,
+    mut command: web::Json<SaveRentalHouseCommand>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    let user_token = req.headers().get("token").unwrap().to_str().unwrap();
+    let user = Claims::validate(user_token).unwrap();
+
+    command.updated_by.replace(user.username.clone());
+    command.created_by.replace(user.username.clone());
+
     let house = RentalHouseCommandSaveHandler::new(repo.into_inner(), sender.into_inner());
     match house.handle(command.into_inner()).await {
         Ok(_) => HttpResponse::Ok().finish(),
@@ -75,8 +85,15 @@ async fn list_sold(
 async fn listed(
     repo: web::Data<MysqlHouseRepository>,
     sender: web::Data<Sender<RentalHouseListedEvent>>,
-    command: web::Json<RentalHouseListedCommand>,
+    mut command: web::Json<RentalHouseListedCommand>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    let user_token = req.headers().get("token").unwrap().to_str().unwrap();
+    let user = Claims::validate(user_token).unwrap();
+
+    command.updated_by.replace(user.username.clone());
+    command.created_by.replace(user.username.clone());
+
     let house = RentalHouseListedCommandHandler::new(repo.into_inner(), sender.into_inner());
     match house.handle(command.into_inner()).await {
         Ok(_) => HttpResponse::Ok().finish(),
@@ -88,8 +105,15 @@ async fn listed(
 async fn unlisted(
     repo: web::Data<MysqlHouseRepository>,
     sender: web::Data<Sender<RentalHouseUnListedEvent>>,
-    command: web::Json<RentalHouseUnListedCommand>,
+    mut command: web::Json<RentalHouseUnListedCommand>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    let user_token = req.headers().get("token").unwrap().to_str().unwrap();
+    let user = Claims::validate(user_token).unwrap();
+
+    command.updated_by.replace(user.username.clone());
+    command.created_by.replace(user.username.clone());
+
     let house = RentalHouseUnListedCommandHandler::new(repo.into_inner(), sender.into_inner());
     match house.handle(command.into_inner()).await {
         Ok(_) => HttpResponse::Ok().finish(),
@@ -101,10 +125,37 @@ async fn unlisted(
 async fn sold(
     repo: web::Data<MysqlHouseRepository>,
     sender: web::Data<Sender<RentalHouseSoldEvent>>,
-    command: web::Json<RentalHouseSoldCommand>,
+    mut command: web::Json<RentalHouseSoldCommand>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    let user_token = req.headers().get("token").unwrap().to_str().unwrap();
+    let user = Claims::validate(user_token).unwrap();
+
+    command.updated_by.replace(user.username.clone());
+    command.created_by.replace(user.username.clone());
+
     let house = RentalHouseSoldCommandHandler::new(repo.into_inner(), sender.into_inner());
     match house.handle(command.into_inner()).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
+    }
+}
+
+#[post("/delete")]
+async fn delete(
+    repo: web::Data<MysqlHouseRepository>,
+    sender: web::Data<Sender<DeleteRentalHouseEvent>>,
+    mut command: web::Json<DeleteRentalHouseCommand>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let user_token = req.headers().get("token").unwrap().to_str().unwrap();
+    let user = Claims::validate(user_token).unwrap();
+
+    command.updated_by.replace(user.username.clone());
+
+    let delete = DeleteRentalHouseCommandHandler::new(repo.into_inner(), sender.into_inner());
+
+    match delete.handle(command.into_inner()).await {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
     }

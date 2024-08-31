@@ -23,12 +23,12 @@ impl<R: HouseRepository> RentalHouseCommandSaveHandler<R> {
         &self,
         command: SaveRentalHouseCommand,
     ) -> Result<(), diesel::result::Error> {
-        if let Some(aggregate) = self.repo.get_by_id(command.house_id.clone()).await {
+        if let Some(mut aggregate) = self.repo.get_by_id(command.house_id.clone()).await {
             aggregate
                 .save_rental_house(command, self.sender.clone())
                 .await;
 
-            self.repo.save(&aggregate).await?;
+            self.repo.save(&mut aggregate).await?;
         }
         Ok(())
     }

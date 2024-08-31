@@ -27,7 +27,7 @@ impl<R: HouseRepository> RentalHouseUnListedCommandHandler<R> {
             aggregate
                 .rental_house_unlisted(command, self.sender.clone())
                 .await;
-            self.repo.save(&aggregate).await?;
+            self.repo.save(&mut aggregate).await?;
         }
 
         Ok(())

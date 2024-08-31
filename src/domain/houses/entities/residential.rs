@@ -12,10 +12,13 @@ pub struct Residential {
     pub city: String,
     pub state: String,
     pub postal_code: String,
-    pub year_built: i16,
+    pub year_built: Option<i16>,
     pub community_type: String,
-    pub property_management_company: String,
+    pub property_management_company: Option<String>,
     pub description: Option<String>,
+
+    pub created_by: Option<String>,
+    pub updated_by: Option<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }

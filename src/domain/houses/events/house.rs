@@ -23,7 +23,7 @@ pub struct SaveHouseEvent {
     pub house_image: Option<String>,
     pub owner_name: Option<String>,
     pub owner_phone: Option<String>,
-    pub updated_by: Option<String>,
+
     // 2024-07-24 00:00:00
     pub title: Option<String>,            // '房源标题',
     pub recommended_tags: Option<String>, // '推荐标签',
@@ -46,10 +46,12 @@ pub struct SaveHouseEvent {
     pub usable_area: Option<BigDecimal>,        // '使用面积',
     pub current_status: Option<String>,         // '现状',
     pub house_type: Option<String>,             // '房屋类型',
+
+    pub updated_by: Option<String>,
+    pub created_by: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct DeleteHouseEvent {
     pub house_id: String,
-    pub deleted_by: String,
 }

@@ -18,7 +18,7 @@ impl<R: HouseRepository> DeleteHouseCommandHandler<R> {
     pub async fn handle(&self, command: DeleteHouseCommand) -> Result<(), diesel::result::Error> {
         if let Some(mut aggregate) = self.repo.get_by_id(command.house_id.clone()).await {
             aggregate.delete_house(command, self.sender.clone()).await;
-            self.repo.save(&aggregate).await?;
+            self.repo.save(&mut aggregate).await?;
         }
 
         Ok(())

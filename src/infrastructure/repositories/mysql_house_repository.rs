@@ -32,7 +32,7 @@ impl MysqlHouseRepository {
 /// 房屋增删改
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 impl MysqlHouseRepository {
-    pub async fn save_house(&self, input_house: SaveHouseEvent) -> anyhow::Result<()> {
+    pub async fn save_house(&self, mut input_house: SaveHouseEvent) -> anyhow::Result<()> {
         use crate::schema::house::dsl::*;
         let conn = &mut self.pool.get()?;
 
@@ -46,6 +46,7 @@ impl MysqlHouseRepository {
                 .values(input_house)
                 .execute(conn)?;
         } else {
+            input_house.created_by.take();
             diesel::update(house)
                 .filter(house_id.eq(input_house.house_id.clone()))
                 .set(input_house)
@@ -96,7 +97,7 @@ impl MysqlHouseRepository {
 /// 聚合房屋
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 impl HouseRepository for Arc<MysqlHouseRepository> {
-    async fn save(&self, input_agg: &HouseAggregate) -> Result<(), diesel::result::Error> {
+    async fn save(&self, input_agg: &mut HouseAggregate) -> Result<(), diesel::result::Error> {
         use crate::schema::house_aggregate::dsl::*;
         let mut conn = self.pool.get().unwrap();
         let exist = house_aggregate
@@ -107,12 +108,13 @@ impl HouseRepository for Arc<MysqlHouseRepository> {
             > 0;
 
         if exist {
+            input_agg.created_by.take();
             diesel::update(house_aggregate.filter(house_id.eq(input_agg.house_id.clone())))
-                .set(input_agg)
+                .set(input_agg.clone())
                 .execute(&mut conn)?;
         } else {
             diesel::insert_into(house_aggregate)
-                .values(input_agg)
+                .values(input_agg.clone())
                 .execute(&mut self.pool.get().unwrap())?;
         }
 
