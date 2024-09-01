@@ -4,10 +4,11 @@ use argon2::{
 };
 
 fn main() {
-    let password = "123456".as_bytes(); // Bad password; don't actually use!
+    let password = "rts2778205".as_bytes(); // Bad password; don't actually use!
     let salt = SaltString::generate(&mut OsRng);
     let argon2: Argon2 = Argon2::default();
     let password_hash = argon2.hash_password(password, &salt).unwrap().to_string();
+    // rts2778205 $argon2id$v=19$m=19456,t=2,p=1$Th0zq4q3ELsZL4Qy41YEeQ$8Z84PkiwONRrd/3jH+FLnb7sA94XNy90d8qVr5urroA
     // 123456
     // $argon2id$v=19$m=19456,t=2,p=1$9lA5D4TBhTtA27jvoyzNtw$8JII76h1N2i2iS3KYEOM3Em1pWcjXWZzn69NRT8n61k
     let parsed_hash = PasswordHash::new("$argon2id$v=19$m=19456,t=2,p=1$CMm6eGkzPhrB46S2Vu5Big$44TzewAU4/5B1rPXTUMTJ58dF/G0SP2nEQH2Q7+4a04").unwrap();

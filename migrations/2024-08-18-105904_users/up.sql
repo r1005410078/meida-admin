@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS users (
 
     `created_by` VARCHAR(255)  COMMENT '创建人',
     `updated_by` VARCHAR(255) COMMENT '更新人',
-    `deleted_by`  VARCHAR(255) COMMENT '删除人',  
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间' 
 );
