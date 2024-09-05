@@ -2,7 +2,9 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use actix_files::NamedFile;
-use actix_web::get;
+use actix_multipart::form::MultipartFormConfig;
+use actix_multipart::Multipart;
+use actix_web::{error, get, HttpResponse};
 use actix_web::{middleware::Logger, web, App, Error, HttpRequest, HttpServer};
 use log::info;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
@@ -180,6 +182,11 @@ pub async fn run() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .app_data(
+                MultipartFormConfig::default()
+                    .memory_limit(100 * 1024 * 1024)
+                    .total_limit(100 * 1024 * 1024),
+            )
             .app_data(users.clone())
             .app_data(residential.clone())
             .app_data(save_residential_sender.clone())
@@ -204,6 +211,7 @@ pub async fn run() -> std::io::Result<()> {
             .configure(routes::second_hand::routes)
             .configure(routes::rental_house::routes)
             .configure(routes::user::routes)
+            .configure(routes::imports::routes)
             .service(index)
     })
     .bind_openssl("0.0.0.0:443", builder)?

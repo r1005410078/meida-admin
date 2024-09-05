@@ -16,6 +16,8 @@ diesel::table! {
         bedrooms -> Integer,
         living_rooms -> Integer,
         bathrooms -> Integer,
+        balcony -> Nullable<Integer>,
+        kitchen -> Nullable<Integer>,
         #[max_length = 20]
         orientation -> Nullable<Varchar>,
         house_description -> Nullable<Text>,
@@ -33,8 +35,6 @@ diesel::table! {
         recommended_tags -> Nullable<Varchar>,
         elevator -> Nullable<Integer>,
         household -> Nullable<Integer>,
-        balcony -> Nullable<Integer>,
-        kitchen -> Nullable<Integer>,
         #[max_length = 100]
         building_structure -> Nullable<Varchar>,
         building_year -> Nullable<Date>,
@@ -188,6 +188,30 @@ diesel::table! {
 }
 
 diesel::table! {
+    imports_properties (id) {
+        #[max_length = 255]
+        id -> Varchar,
+        #[max_length = 255]
+        pice_type -> Varchar,
+        #[max_length = 255]
+        usage -> Varchar,
+        #[max_length = 255]
+        platform -> Varchar,
+        #[max_length = 255]
+        file_status -> Varchar,
+        #[max_length = 255]
+        file_error -> Nullable<Varchar>,
+        #[max_length = 255]
+        file_name -> Varchar,
+        #[max_length = 255]
+        file_path -> Varchar,
+        file_size -> Bigint,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+
+diesel::table! {
     residential (community_name) {
         #[max_length = 255]
         community_name -> Varchar,
@@ -264,6 +288,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     house_rental_sold,
     house_second_hand,
     house_second_hand_sold,
+    imports_properties,
     residential,
     residential_aggregate,
     users,

@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS house (
     bedrooms INT NOT NULL COMMENT '卧室数量',
     living_rooms INT NOT NULL COMMENT '客厅数量', 
     bathrooms INT NOT NULL COMMENT '卫生间数量',
+    balcony INT COMMENT '阳台',
+    kitchen INT COMMENT '厨房',
     orientation VARCHAR(20) COMMENT '房屋朝向',
     house_description TEXT COMMENT '房屋描述',
     house_image TEXT COMMENT '房屋图片', 
@@ -23,8 +25,7 @@ CREATE TABLE IF NOT EXISTS house (
     recommended_tags VARCHAR(255)  DEFAULT '' COMMENT '推荐标签',
     elevator INT COMMENT '梯',
     household INT COMMENT '户',
-    balcony INT COMMENT '阳台',
-    kitchen INT COMMENT '厨房',
+ 
     building_structure VARCHAR(100) COMMENT '建筑结构',
     building_year DATE COMMENT '建筑年代',
     property_rights VARCHAR(100) COMMENT '产权性质',

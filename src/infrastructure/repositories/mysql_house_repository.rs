@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use super::dao::house::QueryHouseDao;
+use super::dao::imports::ImportsPropertiesPO;
+use super::entities::imports::{ImportsPropertiesDto, QueryImportsPropertiesDto};
 use super::object_value::query_value::TableData;
 use crate::domain::houses::entities::house::HousePO;
 use crate::domain::houses::events::house::SaveHouseEvent;
@@ -131,5 +133,47 @@ impl HouseRepository for Arc<MysqlHouseRepository> {
             .first::<HouseAggregate>(&mut conn)
             .optional()
             .expect("Error loading HouseAggregate")
+    }
+}
+
+///
+impl MysqlHouseRepository {
+    pub fn save_imports_properties(
+        &self,
+        dto: ImportsPropertiesDto,
+    ) -> Result<(), diesel::result::Error> {
+        dto.save(self.pool.clone())
+    }
+
+    pub fn query_imports_properties(
+        &self,
+        dto: QueryImportsPropertiesDto,
+    ) -> TableData<ImportsPropertiesPO> {
+        dto.list(self.pool.clone())
+    }
+
+    // 同步需要导入的数据
+    pub fn sync_imports_properties(&self) -> Vec<ImportsPropertiesPO> {
+        use crate::schema::imports_properties::dsl::*;
+        let mut conn = self.pool.get().unwrap();
+
+        let res = imports_properties
+            .select(ImportsPropertiesPO::as_select())
+            .filter(file_status.eq("-1"))
+            .load::<ImportsPropertiesPO>(&mut conn)
+            .expect("Error loading imports_properties");
+
+        res
+    }
+
+    // 删除
+    pub async fn delete_imports_properties(
+        &self,
+        ids: Vec<String>,
+    ) -> Result<(), diesel::result::Error> {
+        use crate::schema::imports_properties::dsl::*;
+        let mut conn = self.pool.get().unwrap();
+        diesel::delete(imports_properties.filter(id.eq_any(ids))).execute(&mut conn)?;
+        Ok(())
     }
 }
